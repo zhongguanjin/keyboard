@@ -1,25 +1,7 @@
 #ifndef LCD_H_
 #define LCD_H_
 
-
 #include    "config.h"
-
-
-//按键枚举变量
-typedef enum
-{
-    BUTTON_TAP= 0,
-    BUTTON_SHOWER,
-    BUTTON_DRAIN,
-    BUTTON_INC,
-    BUTTON_DEC,
-    BUTTON_WATER,
-    BUTTON_AIR,
-    BUTTON_LAMP,
-    BUTTON_MAX
-}BUTTON_DEF;
-
-
 enum
 {
     STATE_OFF = 0,
@@ -114,6 +96,6 @@ extern void    show_lock ();
 extern void    show_state(uint8 state);
 extern void    show_clean ();
 extern void    write_err_num(uint8 dat);
-
+extern void     show_adj_key(uint8 id,uint8 dat);
 
 #endif /* CAPT_APP_H_ */

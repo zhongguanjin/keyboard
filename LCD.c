@@ -1,8 +1,9 @@
 
 #include "lcd.h"
+#include "task_main.h"
 
 
-uint8 tap_val[14]={
+uint8 tap_val[17]={
 0x40,   //0
 0x79,  // 1
 0x24,  // 2
@@ -16,24 +17,10 @@ uint8 tap_val[14]={
 0xbf, // -
 0xab, //11 N
 0x8e, //12 F
-
-0xff, // clear
-/*
-0xc0,   //0
-0xf9,  // 1
-0xa4,  // 2
-0xb0,
-0x99,  // 4
-0x92,   // 5
-0x82,   // 6
-0xf8,
-0x80,
-0x90, //9
-0xbf, // -
-0xab, //11 N
-0x8e, //12 F
-0xff, // clear
-*/
+0xff, //13clear
+0x8c, //14p-水按摩
+0x86, //15e-qi按摩
+0xc6, //16c-灯
 };
 
 
@@ -43,116 +30,7 @@ uint8 digiBuf[4]; //数码管缓冲区
 void MatrixOutputData(void *p)
 {
    uint8 *temp =p;
-   //uint8 step=0;
-
    LED_SEG_DAT = *temp;
-
-   /*
-    for(uint8 i=0;i<8;i++)
-    {
-        step=((*temp)>>i)&0x01;
-        switch(i)
-        {
-            case 0: //bit0
-                {
-                    if(step == OFF)
-                    {
-                       LED_SEGA_L;
-                    }
-                    else
-                    {
-                       LED_SEGA_H;
-                    }
-                    break;
-                }
-            case 1: //bit1
-                {
-                    if(step == OFF)
-                    {
-                       LED_SEGB_L;
-                    }
-                    else
-                    {
-                       LED_SEGB_H;
-                    }
-                    break;
-                }
-
-            case 2:
-                {
-                    if(step == OFF)
-                    {
-                       LED_SEGC_L;
-                    }
-                    else
-                    {
-                       LED_SEGC_H;
-                    }
-                    break;
-                }
-            case 3:
-                {
-                    if(step == OFF)
-                    {
-                       LED_SEGD_L;
-                    }
-                    else
-                    {
-                       LED_SEGD_H;
-                    }
-                    break;
-                }
-            case 4:
-                {
-                    if(step == OFF)
-                    {
-                       LED_SEGE_L;
-                    }
-                    else
-                    {
-                       LED_SEGE_H;
-                    }
-                    break;
-                }
-            case 5:
-                {
-                    if(step == OFF)
-                    {
-                       LED_SEGF_L;
-                    }
-                    else
-                    {
-                       LED_SEGF_H;
-                    }
-                    break;
-                }
-            case 6:
-                {
-                    if(step == OFF)
-                    {
-                       LED_SEGG_L;
-                    }
-                    else
-                    {
-                       LED_SEGG_H;
-                    }
-                    break;
-                }
-            case 7:
-                {
-                    if(step == OFF)
-                    {
-                       LED_SEGH_L;
-                    }
-                    else
-                    {
-                       LED_SEGH_H;
-                    }
-                    break;
-                }
-        }
-
-    }  */
 }
 
 void led_scan(void)
@@ -163,7 +41,8 @@ void led_scan(void)
     LED_COM2_L;
     LED_COM3_L;
     LED_SEIO_OUT_L;
-    MatrixOutputData(&tap_val[digiBuf[digiPos]]);
+    //MatrixOutputData(&tap_val[digiBuf[digiPos]]);
+    LED_SEG_DAT =tap_val[digiBuf[digiPos]];
     switch(digiPos)
     {
         case 0: LED_COM1_L;LED_COM2_H;LED_COM3_H; break; // 选择第一列数码管
@@ -175,7 +54,6 @@ void led_scan(void)
     {
         digiPos = 0;
     }
-
 }
 
 
@@ -200,6 +78,37 @@ void show_clean ( )
     digiBuf[2] = 13;
 }
 
+void show_adj_key(uint8 id,uint8 dat)
+{
+    switch ( id )
+    {
+        case LAMP_VALVE:
+            {
+                digiBuf[0] = 13;
+                digiBuf[1] = 16;
+                digiBuf[2] = dat%10;
+                break;
+            }
+        case AIR_VALVE:
+            {
+                digiBuf[0] = 13;
+                digiBuf[1] = 15;
+                digiBuf[2] = dat%10;
+                break;
+            }
+        case WATER_VALVE:
+            {
+                digiBuf[0] = 13;
+                digiBuf[1] = 14;
+                digiBuf[2] = dat%10;
+                break;
+            }
+        default:
+            {
+                break;
+            }
+    }
+}
 void write_err_num(uint8 dat)
 {
       switch ( dat )

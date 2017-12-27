@@ -4,6 +4,7 @@
 #include "system.h"
 #include "uart.h"
 
+
 /*****************************************************************************
  函 数 名  : Init_Sys
  功能描述  : 系统初始化函数
@@ -22,8 +23,8 @@
 void Init_Sys(void)
 {
 	Init_MCU();
-    BSP_init();
 	Init_UART1();
+    BSP_init();
 	Init_TMR0();
 	//Init_TMR6();
 	GIE		= 1;
@@ -107,6 +108,7 @@ void interrupt ISR(void)
     }
     if(RCIE && RCIF)
     {
+        RCIF=0;
         receiveHandler(RCREG);
     }
 }

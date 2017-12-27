@@ -2,6 +2,7 @@
 #define __TASK_MAIN_H__
 
 #include "config.h"
+#include "print.h"
 
 // 任务结构体：
 typedef struct _TASK_COMPONENTS
@@ -34,7 +35,7 @@ typedef struct _TASK_COMPONENTS
 #define   KEY_SBIO_IN         (TRISB = 0XFF)
 #define   KEY_DAT             (PORTB)
 
-#define  TEST   0
+
 #define   TEMPERATURE_MAX     460         // 最大温度
 #define   TEMPERATURE_MIN     150         // 最低温度
 #define     BUF_SIZE   16
@@ -151,7 +152,7 @@ typedef struct
 {
     uint16 temp_val ;                 // 当前温度
     uint8  air_gear;              //气按摩档位
-    uint8  wat_gear;            //水按摩档位
+    uint8  water_gear;            //水按摩档位
     uint8  lamp_gear;                     //灯光颜色
     uint8  switch_flg: 1;               // 温度显示与状态切换标记  1-- 当前为开关状态
     union
