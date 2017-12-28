@@ -49,78 +49,70 @@ uint8 frame_ok_fag;       //一帧数据正确标志
 enum
 {
   WORK_STATE_IDLE = 0,
+
   WORK_STATE_LOCK,      //儿童锁
   WORK_STATE_ERR,
   WORK_STATE_MAX
 };
 
-//DAT数据枚举变量
-enum
-{
-    DAT_FUN_CMD = 0,
-    DAT_TEMP_HIGH,
-    DAT_TEMP_LOW,
-    DAT_STATE,         // 3
-    DAT_FLOW_GEAR,
-    DAT_COLOUR,         // 5
-    DAT_MASSAGE,        //6
-    DAT_PER_TEMP,         // 7保温温度
-    DAT_DRAINAGE,       //8
-    DAT_SPARE1,
-    DAT_SPARE2,
-    DAT_MAX
-};
-
-//dat[0],功能码枚举变量
-enum
-{
-    FUN_IDLE =0,
-    FUN_CHANNEL_SWITCH,
-    FUN_TEMP_GEAR,
-    FUN_TEMP_POS,
-    FUN_FLOW_GEAR,
-    FUN_QUID,         //5
-    FUN_LED,
-    FUN_MASSAGE,
-    FUN_PRE_TEMP,   //8
-    FUN_DRAINAGE,
-    FUN_OUT_WATER,
-    FUN_MAX
-};
 
 /*
+功能码
+温度高
+温度低
+流量档位
+保温温度
+按摩信息
+液位+灯光
+龙头+花洒+下水器
+出水温度
+错误码
+保留
+*/
 //DAT数据枚举变量
 enum
 {
     DAT_FUN_CMD = 0,
-    DAT_TEMP_HIGH,
-    DAT_TEMP_LOW,
-    DAT_FLOW_GEAR,
+    DAT_TEMP_H,
+    DAT_TEMP_L,
+    DAT_FLOW,
     DAT_TEM_PRE, // 4
     DAT_MASSAGE,  //5
-    DAT_COLOUR,   //6
-    DAT_INFO,       //7
+    DAT_LIGHT,   //6
+    DAT_STATE,       //7
     DAT_TEM_OUT,  //8
     DAT_ERR_NUM,   //9
     DAT_SPARE1,
     DAT_MAX
 };
 
-//dat[0],功能码枚举变量
+/*
+0x00 -- 空指令
+0x01 -- 进水通道切换(此时流量与温度对应发生变化)
+0x02 -- 排水
+0x03 -- 按摩
+0x04 -- 灯光
+0x05 -- 循环保温
+0x06 -- 温度变化
+0x07 -- 流量变化
+0x08 -- 清洁功能
+0x09 --
+*/
 enum
 {
     FUN_IDLE =0,
     FUN_CHANNEL_SWITCH,
     FUN_DRAINAGE,
     FUN_MASSAGE,
-    FUN_LIGHT_CTR,
+    FUN_LIGHT,
     FUN_CYCLE, //5
     FUN_TEMP,
     FUN_FLOW,
-    FUN_LOCK,
+    FUN_CLEAN, //8
     FUN_MAX
 };
-*/
+
+
 enum
 {
     MASSAGE_GEAR_OFF =0,

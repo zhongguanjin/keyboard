@@ -170,16 +170,6 @@ void LED_INIT(void)
     LED_COM1_L;
     LED_COM2_L;
     LED_COM3_L;
- /*
-    LED_SEGA_L;
-    LED_SEGB_L;
-    LED_SEGC_L;
-    LED_SEGD_L;
-    LED_SEGE_L;
-    LED_SEGF_L;
-    LED_SEGG_L;
-    LED_SEGH_L;
-    */
     LED_SEIO_OUT_L;
     LED_TAP_ON;
     LED_SHOWER_ON;
@@ -189,20 +179,10 @@ void LED_INIT(void)
     LED_WATER_ON;
     LED_AIR_ON;
     LED_LAMP_ON;
-         delay_ms(3000);
+    delay_ms(3000);
     LED_COM1_H;
     LED_COM2_H;
     LED_COM3_H;
-    /*
-    LED_SEGA_H;
-    LED_SEGB_H;
-    LED_SEGC_H;
-    LED_SEGD_H;
-    LED_SEGE_H;
-    LED_SEGF_H;
-    LED_SEGG_H;
-    LED_SEGH_H;
-    */
     LED_SEIO_OUT_H;
 
     LED_TAP_OFF;
