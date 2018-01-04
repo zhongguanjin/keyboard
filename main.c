@@ -99,7 +99,7 @@ void interrupt ISR(void)
         TMR0 = TMR0+TMR0_VALUE;
         static uint8  led_count = 0;
         led_count ++ ;
-        if(led_count>=5)
+        if(led_count>=5)// 200hz=5ms
         {
             led_count = 0;
             led_scan();

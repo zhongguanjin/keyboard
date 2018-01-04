@@ -69,7 +69,7 @@ void Init_UART1(void)
 
 *****************************************************************************/
 
-void usart1_send_byte(char dat)
+void usart_send_byte(char dat)
 {
     while(!TX1STAbits.TRMT)		//TRMT=0:正在发送，TRMT=1:发送已完成
 	{
@@ -126,7 +126,7 @@ void send_dat(void *p,uint8 len)
     delay_us(500);
     for(uint8 j=0;j<len;j++)
     {
-        usart1_send_byte(*temp);
+        usart_send_byte(*temp);
         if(j<len-1) //j<15
         {
             temp++;

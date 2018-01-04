@@ -3,7 +3,7 @@
 #include "uart.h"
 #include "stdio.h"
 #include <string.h>
-#include "print.h"
+#include "dbg.h"
 
 volatile uint8  work_state ;
 static uint16 min_time =0;
@@ -169,7 +169,7 @@ void key_adjust(uint8 id,uint8 dat)
 void TaskShow(void)
 {
     show_work();
-    //show_temp_actul();
+    show_temp_actul();
 }
 
 /*****************************************************************************
@@ -292,7 +292,7 @@ void TAP_EventHandler(void)
             }
             min_time = 0;
             min_cnt = 0;
-            switch_time_count = 0;      //on /off 间隔时间要清0
+            switch_time_count = 0;                  //on /off 间隔时间要清0
             ShowPar.tap_state ^= 0x01;
             if(ShowPar.tap_state == STATE_ON)
             {
@@ -674,14 +674,19 @@ void LOCK_EventHandler(void) //10ms
         LED_TAP_OFF;
         KeyCmd.req.dat[DAT_FUN_CMD]= FUN_CHANNEL_SWITCH;            // 功能码：进水开关改变
         KeyCmd.req.dat[DAT_STATE] = ShowPar.val&0x70;
+#if test
+        dbg("idle -> lock,dat[%d]:%d\r\n",DAT_STATE,KeyCmd.req.dat[DAT_STATE]);
+#endif
     }
     else if(work_state == WORK_STATE_LOCK)
     {
        show_tempture( ShowPar.temp_val);
        work_state = WORK_STATE_IDLE;
+#if test
+       dbg("lock -> idle\r\n");
+#endif
     }
 }
-
 void IDLE_EventHandler(void) //10ms
 {
     if( work_state == WORK_STATE_LOCK)

@@ -2,7 +2,7 @@
 #define __TASK_MAIN_H__
 
 #include "config.h"
-#include "print.h"
+
 
 // 任务结构体：
 typedef struct _TASK_COMPONENTS
@@ -14,6 +14,7 @@ typedef struct _TASK_COMPONENTS
 } TASK_COMPONENTS;              // 任务定义
 
 
+#define test (1)
 /*按键功能定义*/
 
 #define   ALL_CLOSE          0X00
@@ -31,7 +32,6 @@ typedef struct _TASK_COMPONENTS
 
 
 //key io
-
 #define   KEY_SBIO_IN         (TRISB = 0XFF)
 #define   KEY_DAT             (PORTB)
 
