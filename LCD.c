@@ -25,7 +25,7 @@ uint8 tap_val[17]={
 
 
 
-uint8 digiBuf[4]; //数码管缓冲区
+uint8 digiBuf[3]; //数码管缓冲区
 
 void MatrixOutputData(void *p)
 {

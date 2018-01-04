@@ -482,7 +482,7 @@ void DEC_EventHandler(void)
         LED_INC_OFF;
         incdec_fag =1;
         incdec_time = 0;
-        if(lcd_flag == 1)
+        if(lcd_flag == 1)//休眠唤醒
         {
             lcd_flag = 0;
             show_tempture( ShowPar.temp_val);
@@ -687,6 +687,21 @@ void LOCK_EventHandler(void) //10ms
 #endif
     }
 }
+/*****************************************************************************
+ 函 数 名  : IDLE_EventHandler
+ 功能描述  : 空闲回调函数
+ 输入参数  : void
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
+
+ 修改历史      :
+  1.日    期   : 2018年1月4日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
 void IDLE_EventHandler(void) //10ms
 {
     if( work_state == WORK_STATE_LOCK)
@@ -705,19 +720,18 @@ void IDLE_EventHandler(void) //10ms
        min_time = 0;
        min_cnt++;
        if(work_state == WORK_STATE_IDLE)
-      {
-         if(ShowPar.val == OFF)
-         {
-            show_clean();
-            lcd_flag = 1;  //置位关闭标志位
-         }
-      }
+       {
+            if(ShowPar.val == OFF)
+            {
+                show_clean();
+                lcd_flag = 1;  //置位关闭标志位
+            }
+       }
     }
     if(work_state == WORK_STATE_IDLE)
     {
         if(min_cnt == 30)  //温度保持30min钟 后切换成38度
         {
-
             if((ShowPar.shower_state== OFF)&&(ShowPar.tap_state == OFF)) //龙头不再进水时
             {
                 ShowPar.temp_val = 380;
@@ -1184,7 +1198,6 @@ void TaskRemarks(void)
 void TaskProcess(void)
 {
     uint8 i;
-
     for (i=0; i<TASKS_MAX; i++)           // 逐个任务时间处理
     {
          if (TaskComps[i].Run)           // 时间不为0

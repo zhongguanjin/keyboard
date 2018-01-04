@@ -28,7 +28,7 @@ typedef struct _TASK_COMPONENTS
 #define   AIR_VALVE          0X40
 #define   LAMP_VALVE         0X80
 
-#define   LOCK_VALVE        (TAP_VALVE|INC_VALVE|DEC_VALVE) //0x19
+#define   LOCK_VALVE        (TAP_VALVE|SHOWER_VALVE|DEC_VALVE)
 
 
 //key io
