@@ -23,8 +23,8 @@
 void Init_Sys(void)
 {
 	Init_MCU();
-	Init_UART1();
     BSP_init();
+	Init_UART1();
 	Init_TMR0();
 	//Init_TMR6();
 	GIE		= 1;
