@@ -1,6 +1,6 @@
 
 #include "dbg.h"
-#include "lcd.h"
+
 
 
 
@@ -501,13 +501,14 @@ void  my_printf(const char *pFormat, ...)
     result = DBG_CONSOLEBUF_SIZE - 1;
     for(i=0;i<result;i++)
     {
-    	uart_send_byte(&rt_log_buf[i]);
+    	uart_send_byte(rt_log_buf[i]);
     }
     va_end(ap);
 }
 
  void my_dbg(const char *pFormat, ...)
  {
+ #if 0
      va_list ap;
      signed int result;
      char rt_log_buf[DBG_CONSOLEBUF_SIZE];
@@ -517,9 +518,9 @@ void  my_printf(const char *pFormat, ...)
      result = vformat(rt_log_buf, MAX_STRING_SIZE,pFormat, ap);
      if (result > DBG_CONSOLEBUF_SIZE - 1)
      result = DBG_CONSOLEBUF_SIZE - 1;
-     //send_dat(&rt_log_buf, result);
+     send_dat(&rt_log_buf, result);
      va_end(ap);
-
+#endif
  }
 
 

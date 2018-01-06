@@ -1,6 +1,6 @@
 
-#include "lcd.h"
-#include "task_main.h"
+#include "LCD.h"
+#include "Task_Main.h"
 
 uint8 digi_flg = 0;
 

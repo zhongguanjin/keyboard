@@ -1,5 +1,5 @@
 
-#include "task_main.h"
+#include "Task_Main.h"
 #include "uart.h"
 #include "stdio.h"
 #include <string.h>
@@ -1385,7 +1385,7 @@ void BSP_init(void)
     KeyCmd.req.dev_addr  = 0x01;
     KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.spare1, crc_len);
     KeyCmd.req.end_num = 0x34;
-    memcpy(&Send_Buf,&KeyCmd.req,sizeof(KeyCmd.req));
+    memcpy(Send_Buf,&KeyCmd.req,sizeof(KeyCmd.req));
     show_tempture( ShowPar.temp_val);
     work_state = WORK_STATE_IDLE;
 }
