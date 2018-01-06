@@ -2,6 +2,7 @@
 #define LCD_H_
 
 #include    "config.h"
+
 enum
 {
     STATE_OFF = 0,
@@ -91,7 +92,6 @@ enum
 extern void    show_tempture( uint16 data);
 extern void    LED_INIT();
 extern void    led_scan(void);
-extern void    MatrixOutputData(void *p);
 extern void    show_lock ();
 extern void    show_state(uint8 state);
 extern void    show_clean ();

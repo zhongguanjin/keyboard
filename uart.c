@@ -69,7 +69,7 @@ void Init_UART1(void)
 
 *****************************************************************************/
 
-void usart_send_byte(char dat)
+void uart_send_byte(char dat)
 {
     while(!TX1STAbits.TRMT)		//TRMT=0:正在发送，TRMT=1:发送已完成
 	{
@@ -94,10 +94,9 @@ void usart_send_byte(char dat)
 *****************************************************************************/
 void uart_send_str( uint8 *s)
 {
-
     while(*s!='\0')   // \0表示字符串结束标志，通过检测是否字符串末尾
     {
-       usart1_send_byte(*s++);
+       uart_send_byte(*s++);
     }
 }
 
@@ -126,7 +125,7 @@ void send_dat(void *p,uint8 len)
     delay_us(500);
     for(uint8 j=0;j<len;j++)
     {
-        usart_send_byte(*temp);
+        uart_send_byte(*temp);
         if(j<len-1) //j<15
         {
             temp++;
@@ -135,5 +134,4 @@ void send_dat(void *p,uint8 len)
     delay_ms(5);
     M485_EN_L;
 }
-
 

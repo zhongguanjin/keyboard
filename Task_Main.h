@@ -14,7 +14,6 @@ typedef struct _TASK_COMPONENTS
 } TASK_COMPONENTS;              // 任务定义
 
 
-#define test (1)
 /*按键功能定义*/
 
 #define   ALL_CLOSE          0X00
@@ -46,10 +45,11 @@ uint8       Send_Buf[BUF_SIZE+10];
 
 
 uint8 frame_ok_fag;       //一帧数据正确标志
+
+
 enum
 {
   WORK_STATE_IDLE = 0,
-
   WORK_STATE_LOCK,      //儿童锁
   WORK_STATE_ERR,
   WORK_STATE_MAX

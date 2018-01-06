@@ -6,26 +6,32 @@
 #include "dbg.h"
 
 volatile uint8  work_state ;
-static uint16 min_time =0;
-static uint8  min_cnt;                  //
-static uint16 tim_cnt = 0;              //进水时的温度和预设温度显示的时间计数
+typedef struct
+{
+     uint16 sleep ;                   //睡眠时间
+     uint8  temp38;                  //温度切换38度的时间
+     uint16 temp_switch;                //进水时的温度和预设温度显示的时间计数
+     uint8  switch_cnt;            //on,off和温度切换的时间计数
+     uint8  key_adj;              //按键lamp,water,air使用+,-的使用时间
+     uint8  incdec;                //+,-键led灯亮灭控制时间
+}tTime_T;
 
-static uint8 switch_time_count = 0;    //on,off和温度切换的时间计数
+tTime_T Time_t;
 
-static uint8  key_time_adj=0;                    //按键lamp,water,air使用+,-的使用时间
-volatile uint8  key_gear;          //按键调节档位
+
+volatile uint8  key_gear;                 //按键调节档位
 volatile uint8  key_switch_fag;          //按键调节切换标志
-
 volatile uint8  incdec_fag;
-static uint8   incdec_time=0;
-
 uint8 lcd_flag = 0;   //lcd开启以关闭的状态标志
 
-uint8 lcd_lock_flg = 0; //童锁标志
 //按键变量
 uint8   KeyPressDown=0x00; //代表的是触发 第一次有效，后面会清0
 uint8   CurrReadKey;  //记录本次KeyScan()读取的IO口键值
 uint8   LastKey=0x00;    //代表的是连续按下
+
+#define SIZE 4
+static uint8 key_arry[SIZE]; //按键堆栈数组
+static int top = 0;
 
 //函数申明
 uint8 CRC8_SUM(void * p, uint8 len);
@@ -46,6 +52,7 @@ void LAMP_EventHandler(void);
 void LOCK_EventHandler(void);
 void IDLE_EventHandler(void);
 void key_adjust(uint8 id,uint8 dat);
+void time_cnt_del( uint8 id);
 
 
 
@@ -67,88 +74,7 @@ typedef enum _TASK_LIST
     TASKS_MAX                // 总的可供分配的定时任务数目
 } TASK_LIST;
 
-#define SIZE 3
-static uint8 key_arry[SIZE]; //按键堆栈数组
-static int top = -1;
 
-/* 添加 */
-void add(uint8 value)
-{
-    if(top == SIZE-1) //满
-    {
-        key_arry[top] = value;
-        return ;
-    }
-    top += 1;
-    key_arry[top] = value;
-}
-
-void clear(void)
-{
-    if(top == -1)  //空
-    {
-        return ;
-    }
-    if(key_arry[top] != 0x00)
-    {
-        for(uint8 i=0;i<=top;i++)
-        {
-           key_arry[i]=0;
-        }
-        top = -1;
-    }
-}
-/* 删除 */
-void del(uint8 value)
-{
-    if(top == -1)  //空
-    {
-        return ;
-    }
-    if(key_arry[top] == value) //是栈顶元素
-    {
-        key_arry[top] = 0; //清零
-        top -= 1;
-    }
-    else
-    {
-        for(uint8 i=0;i<top;i++)
-        {
-            if(key_arry[i] == value)
-            {
-                for(uint8 j=i; j<top;j++) //在i数组后面的元素往前移
-                {
-                    key_arry[j]=key_arry[j+1];
-                }
-                key_arry[top] = 0; //清零
-                top -= 1;  //移完后需把栈顶标号减1
-            }
-        }
-    }
-}
-
-/*****************************************************************************
- 函 数 名  : key_adjust
- 功能描述  : 按键调节功能：灯光，水按摩，气按摩
- 输入参数  : uint8 id
-             uint8 dat
- 输出参数  : 无
- 返 回 值  :
- 调用函数  :
- 被调函数  :
-
- 修改历史      :
-  1.日    期   : 2017年12月1日
-    作    者   : zgj
-    修改内容   : 新生成函数
-
-*****************************************************************************/
-void key_adjust(uint8 id,uint8 dat)
-{
-    key_time_adj = 0;
-    key_switch_fag =1;
-    show_adj_key(id, dat);
-}
 
 
 /*****************************************************************************
@@ -169,7 +95,10 @@ void key_adjust(uint8 id,uint8 dat)
 void TaskShow(void)
 {
     show_work();
-    show_temp_actul();
+    if(key_switch_fag ==0)
+    {
+        show_temp_actul();
+    }
 }
 
 /*****************************************************************************
@@ -276,7 +205,144 @@ void TaskKeyPrs(void)  //10MS
     IDLE_EventHandler();
 }
 
+/* 添加 */
+void add(uint8 value)
+{
+    if(top == SIZE-1) //满
+    {
+        key_arry[top] = value;
+        return ;
+    }
+    top += 1;
+    key_arry[top] = value;
+}
 
+void clear(void)
+{
+    if(top == 0)  //空
+    {
+        return ;
+    }
+    if(key_arry[top] != 0x00)
+    {
+        for(uint8 i=0;i<=top;i++)
+        {
+           key_arry[i]=0;
+        }
+        top = 0;
+    }
+}
+/* 删除 */
+void del(uint8 value)
+{
+    if(top == 0)  //空
+    {
+        return ;
+    }
+    if(key_arry[top] == value) //是栈顶元素
+    {
+        key_arry[top] = 0; //清零
+        top = 0;
+    }
+    else
+    {
+        for(uint8 i=0;i<top;i++)
+        {
+            if(key_arry[i] == value)
+            {
+                for(uint8 j=i; j<top;j++) //在i数组后面的元素往前移
+                {
+                    key_arry[j]=key_arry[j+1];
+                }
+                key_arry[top] = 0; //清零
+                top -= 1;  //移完后需把栈顶标号减1
+            }
+        }
+    }
+}
+
+/*****************************************************************************
+ 函 数 名  : key_adjust
+ 功能描述  : 按键调节功能：灯光，水按摩，气按摩
+ 输入参数  : uint8 id
+             uint8 dat
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
+
+ 修改历史      :
+  1.日    期   : 2017年12月1日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
+void key_adjust(uint8 id,uint8 dat)
+{
+    key_switch_fag =1;
+    show_adj_key(id, dat);
+}
+
+/*****************************************************************************
+ 函 数 名  : time_cnt_del
+ 功能描述  : 时间计数清零函数
+ 输入参数  : uint8 id -按键值
+ 输出参数  : 无
+ 返 回 值  : void
+ 调用函数  :
+ 被调函数  :
+
+ 修改历史      :
+  1.日    期   : 2018年1月6日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
+void time_cnt_del( uint8 id)
+{
+    Time_t.sleep = 0;
+    Time_t.temp38 = 0;
+    if((id==TAP_VALVE)||(id==SHOWER_VALVE))//龙头或花洒
+    {
+        Time_t.switch_cnt = 0;                  //on /off 间隔时间要清0
+        Time_t.temp_switch =0;
+    }
+    if((id==INC_VALVE)||(id==DEC_VALVE))//+,-
+    {
+        if(key_switch_fag==0) //调节模式不要清除temp_switch的时间
+        {
+            Time_t.temp_switch =0;
+        }
+        Time_t.incdec = 0;
+        Time_t.key_adj = 0;
+        incdec_fag =1;
+    }
+    if((id==AIR_VALVE)||(id==WATER_VALVE)||(id==LAMP_VALVE))//按摩，灯光键
+    {
+         Time_t.key_adj = 0;
+    }
+    if(id==DRAIN_VALVE)
+    {
+       Time_t.switch_cnt =0;
+    }
+
+}
+
+/*****************************************************************************
+ 函 数 名  : TAP_EventHandler
+ 功能描述  : 龙头按键处理函数
+ 输入参数  : void
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
+
+ 修改历史      :
+  1.日    期   : 2018年1月5日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
 void TAP_EventHandler(void)
 {
     if(work_state == WORK_STATE_IDLE)
@@ -290,9 +356,7 @@ void TAP_EventHandler(void)
                 show_tempture( ShowPar.temp_val);
                 return;
             }
-            min_time = 0;
-            min_cnt = 0;
-            switch_time_count = 0;                  //on /off 间隔时间要清0
+            time_cnt_del(TAP_VALVE);
             ShowPar.tap_state ^= 0x01;
             if(ShowPar.tap_state == STATE_ON)
             {
@@ -307,13 +371,28 @@ void TAP_EventHandler(void)
                LED_TAP_OFF;
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_CHANNEL_SWITCH;  // 功能码：进水开关改变
-            KeyCmd.req.dat[DAT_STATE] = ShowPar.val&0x07;
+            KeyCmd.req.dat[DAT_STATE] = (ShowPar.val&0x07)<<4;
             ShowPar.switch_flg = STATE_ON;
             show_state(ShowPar.tap_state);
+            dbg("tap,dat[%d]:%x\r\n",DAT_STATE,KeyCmd.req.dat[DAT_STATE]);
         }
     }
 }
+/*****************************************************************************
+ 函 数 名  : SHOWER_EventHandler
+ 功能描述  : 花洒按键处理函数
+ 输入参数  : void
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
 
+ 修改历史      :
+  1.日    期   : 2018年1月5日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
 void SHOWER_EventHandler(void)
 {
     if(work_state == WORK_STATE_IDLE)
@@ -321,15 +400,13 @@ void SHOWER_EventHandler(void)
         if(KeyPressDown&SHOWER_VALVE)  //第一次触发
         {
             KeyPressDown = 0;
+            time_cnt_del(SHOWER_VALVE);
             if(lcd_flag == 1)
             {
                 lcd_flag = 0;
                 show_tempture( ShowPar.temp_val);
                 return;
             }
-            min_time = 0;
-            min_cnt = 0;
-            switch_time_count = 0;
             ShowPar.shower_state ^= 0x01;
             if( ShowPar.shower_state == STATE_ON)
             {
@@ -342,13 +419,28 @@ void SHOWER_EventHandler(void)
                LED_SHOWER_OFF;
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_CHANNEL_SWITCH;            // 功能码：进水开关改变
-            KeyCmd.req.dat[DAT_STATE] = ShowPar.val&0x07;
+            KeyCmd.req.dat[DAT_STATE] = (ShowPar.val&0x07)<<4;
             ShowPar.switch_flg = STATE_ON;
             show_state(ShowPar.shower_state);
+            dbg("shower,dat[%d]:%x\r\n",DAT_STATE,KeyCmd.req.dat[DAT_STATE]);
         }
     }
 }
+/*****************************************************************************
+ 函 数 名  : DRAIN_EventHandler
+ 功能描述  : 排水按键处理函数
+ 输入参数  : void
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
 
+ 修改历史      :
+  1.日    期   : 2018年1月5日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
 void DRAIN_EventHandler(void)
 {
     if(work_state == WORK_STATE_IDLE)
@@ -356,14 +448,13 @@ void DRAIN_EventHandler(void)
         if(KeyPressDown&DRAIN_VALVE)  //第一次触发
         {
             KeyPressDown = 0;
+            time_cnt_del(DRAIN_VALVE);
             if(lcd_flag == 1)
             {
                 lcd_flag = 0;
                 show_tempture( ShowPar.temp_val);
                 return ;
             }
-            min_time = 0;
-            switch_time_count = 0;
             ShowPar.drain_state ^= 0x01;
             if( ShowPar.drain_state == STATE_ON)
             {
@@ -374,13 +465,28 @@ void DRAIN_EventHandler(void)
                LED_DRAIN_OFF;
             }
             KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE;
-            KeyCmd.req.dat[DAT_STATE] = ShowPar.val&0x07;
+            KeyCmd.req.dat[DAT_STATE] = (ShowPar.val&0x07)<<4;
             ShowPar.switch_flg = STATE_ON;
             show_state(ShowPar.drain_state);
+            dbg("drainage,dat[%d]:%x\r\n",DAT_STATE,KeyCmd.req.dat[DAT_STATE]);
         }
     }
 }
+/*****************************************************************************
+ 函 数 名  : INC_EventHandler
+ 功能描述  : 增加按键处理函数
+ 输入参数  : void
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
 
+ 修改历史      :
+  1.日    期   : 2018年1月5日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
 void INC_EventHandler(void)
 {
     static uint8 time_cnt = 0;
@@ -388,15 +494,13 @@ void INC_EventHandler(void)
     {
         LED_INC_ON;
         LED_DEC_OFF;
-        incdec_fag =1;
-        incdec_time = 0;
+        time_cnt_del(INC_VALVE);
         if(lcd_flag == 1)
         {
             lcd_flag = 0;
             show_tempture( ShowPar.temp_val);
             return;
         }
-        tim_cnt = 0;
         switch (key_arry[top])
         {
             case ALL_CLOSE :
@@ -427,6 +531,7 @@ void INC_EventHandler(void)
                     if(KeyPressDown&INC_VALVE)  //第一次触发
                     {
                         KeyPressDown = 0;
+                        /*
                         if(ShowPar.lamp_gear == LAMP_CYCLE) // 如果是循环状态,按下就定色
                         {
                           ShowPar.lamp_gear = LAMP_STOP;
@@ -439,16 +544,25 @@ void INC_EventHandler(void)
                              ShowPar.lamp_gear = LAMP_RED;
                            }
                         }
+                        */
+                        /* BEGIN: Added by zgj, 2018/1/5 */
+                        ShowPar.lamp_gear++;
+                        if(ShowPar.lamp_gear >LAMP_CYCLE)
+                        {
+                          ShowPar.lamp_gear = LAMP_RED;
+                        }
+                        /* END:   Added by zgj, 2018/1/5 */
                         key_gear = ShowPar.lamp_gear;
                         key_adjust(key_arry[top],key_gear);
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:06
                         KeyCmd.req.dat[DAT_LIGHT] = ShowPar.lamp_gear;
+                        dbg("lamp dat[%d]:%x\r\n",DAT_LIGHT, KeyCmd.req.dat[DAT_LIGHT]);
                     }
                     break;
                 }
             case WATER_VALVE:
                 {
-                   /* if(KeyPressDown&INC_VALVE)  //第一次触发
+                    if(KeyPressDown&INC_VALVE)  //第一次触发
                     {
                         KeyPressDown = 0;
                         ShowPar.water_gear++;
@@ -459,20 +573,47 @@ void INC_EventHandler(void)
                         key_gear = ShowPar.water_gear;
                         key_adjust(key_arry[top],key_gear);
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:07
-                        KeyCmd.req.dat[DAT_COLOUR] = ShowPar.lamp_gear;
+                        KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
+                        dbg("massage dat[%d]:%x\r\n",DAT_MASSAGE, KeyCmd.req.dat[DAT_MASSAGE]);
                     }
-                    */
                     break;
                 }
             case AIR_VALVE:
                 {
-
+                    if(KeyPressDown&INC_VALVE)  //第一次触发
+                    {
+                        KeyPressDown = 0;
+                        ShowPar.air_gear++;
+                        if(ShowPar.air_gear >MASSAGE_GEAR_ON5)
+                        {
+                            ShowPar.air_gear = MASSAGE_GEAR_ON5;
+                        }
+                        key_gear = ShowPar.air_gear;
+                        key_adjust(key_arry[top],key_gear);
+                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:07
+                        KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
+                        dbg("massage dat[%d]:%x\r\n",DAT_MASSAGE, KeyCmd.req.dat[DAT_MASSAGE]);
+                    }
                     break;
                 }
         }
     }
 }
+/*****************************************************************************
+ 函 数 名  : DEC_EventHandler
+ 功能描述  : 减少按键处理函数
+ 输入参数  : void
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
 
+ 修改历史      :
+  1.日    期   : 2018年1月5日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
 void DEC_EventHandler(void)
 {
     static uint8 time_cnt = 0;
@@ -480,15 +621,13 @@ void DEC_EventHandler(void)
     {
         LED_DEC_ON;
         LED_INC_OFF;
-        incdec_fag =1;
-        incdec_time = 0;
+        time_cnt_del(DEC_VALVE); //清零时间
         if(lcd_flag == 1)//休眠唤醒
         {
             lcd_flag = 0;
             show_tempture( ShowPar.temp_val);
             return;
         }
-        tim_cnt = 0;
         switch (key_arry[top])
         {
             case ALL_CLOSE :
@@ -512,6 +651,7 @@ void DEC_EventHandler(void)
                     if(KeyPressDown&DEC_VALVE)  //第一次触发
                     {
                         KeyPressDown = 0;
+                        /*
                         if(ShowPar.lamp_gear == LAMP_CYCLE) // 如果是循环状态,按下就定色
                         {
                             ShowPar.lamp_gear = LAMP_STOP;
@@ -531,27 +671,76 @@ void DEC_EventHandler(void)
                                  }
                             }
                        }
+                       */
+                       /* BEGIN: Added by zgj, 2018/1/5 */
+                        ShowPar.lamp_gear--;
+                        if(ShowPar.lamp_gear < LAMP_RED)
+                        {
+                            ShowPar.lamp_gear =LAMP_CYCLE;
+                        }
+                       /* END:   Added by zgj, 2018/1/5 */
                        key_gear = ShowPar.lamp_gear;
                        key_adjust(key_arry[top],key_gear);
                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:06
                        KeyCmd.req.dat[DAT_LIGHT]=ShowPar.lamp_gear;
+                       dbg("lamp dat[%d]:%x\r\n",DAT_LIGHT, KeyCmd.req.dat[DAT_LIGHT]);
                     }
                     break;
                 }
             case WATER_VALVE:
                 {
-
+                    if(KeyPressDown&DEC_VALVE)  //第一次触发
+                    {
+                        KeyPressDown = 0;
+                        ShowPar.water_gear--;
+                        if(ShowPar.water_gear <MASSAGE_GEAR_ON1)
+                        {
+                            ShowPar.water_gear = MASSAGE_GEAR_ON1;
+                        }
+                        key_gear = ShowPar.water_gear;
+                        key_adjust(key_arry[top],key_gear);
+                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:07
+                        KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
+                        dbg("massage dat[%d]:%x\r\n",DAT_MASSAGE, KeyCmd.req.dat[DAT_MASSAGE]);
+                    }
                     break;
                 }
             case AIR_VALVE:
                 {
-
+                    if(KeyPressDown&DEC_VALVE)  //第一次触发
+                    {
+                        KeyPressDown = 0;
+                        ShowPar.air_gear--;
+                        if(ShowPar.air_gear <MASSAGE_GEAR_ON1)
+                        {
+                            ShowPar.air_gear = MASSAGE_GEAR_ON1;
+                        }
+                        key_gear = ShowPar.air_gear;
+                        key_adjust(key_arry[top],key_gear);
+                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:07
+                        KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
+                        dbg("massage dat[%d]:%x\r\n",DAT_MASSAGE, KeyCmd.req.dat[DAT_MASSAGE]);
+                    }
                     break;
                 }
         }
     }
 }
+/*****************************************************************************
+ 函 数 名  : AIR_EventHandler
+ 功能描述  : 气按摩处理函数
+ 输入参数  : void
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
 
+ 修改历史      :
+  1.日    期   : 2018年1月5日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
 void AIR_EventHandler(void)
 {
     if(work_state == WORK_STATE_IDLE)
@@ -559,8 +748,7 @@ void AIR_EventHandler(void)
         if(KeyPressDown &AIR_VALVE)
         {
             KeyPressDown = 0;
-            min_time = 0;  //睡眠时间清零
-            switch_time_count = 0;
+            time_cnt_del(AIR_VALVE);
             if(lcd_flag ==1)
             {
                 lcd_flag = 0;
@@ -572,8 +760,8 @@ void AIR_EventHandler(void)
             {
                 LED_AIR_ON;
                 add(AIR_VALVE);
-                KeyCmd.req.dat[DAT_MASSAGE] = ShowPar.val&0x60;
-                ShowPar.air_gear= MASSAGE_GEAR_ON3;
+                KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
+                //ShowPar.air_gear= MASSAGE_GEAR_ON3;
                 key_gear = ShowPar.air_gear;
                 key_adjust(key_arry[top],key_gear);
             }
@@ -581,15 +769,30 @@ void AIR_EventHandler(void)
             {
                LED_AIR_OFF;
                del(AIR_VALVE);
-               KeyCmd.req.dat[DAT_MASSAGE] = ShowPar.air_state+(ShowPar.water_state<<1);
-               ShowPar.air_gear= MASSAGE_GEAR_OFF;
+               KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
+               //ShowPar.air_gear= MASSAGE_GEAR_OFF;
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+            dbg("massage dat[%d]:%x\r\n",DAT_MASSAGE, KeyCmd.req.dat[DAT_MASSAGE]);
         }
     }
 
 }
+/*****************************************************************************
+ 函 数 名  : WATER_EventHandler
+ 功能描述  : 水按摩处理函数
+ 输入参数  : void
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
 
+ 修改历史      :
+  1.日    期   : 2018年1月5日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
 void WATER_EventHandler(void)
 {
     if(work_state == WORK_STATE_IDLE)
@@ -597,7 +800,7 @@ void WATER_EventHandler(void)
         if(KeyPressDown&WATER_VALVE)
         {
             KeyPressDown = 0;
-            min_time = 0;  //睡眠时间清零
+            time_cnt_del(WATER_VALVE);
             if(lcd_flag ==1)
             {
                 lcd_flag = 0;
@@ -609,8 +812,8 @@ void WATER_EventHandler(void)
             {
                 LED_WATER_ON;
                 add(WATER_VALVE);
-                KeyCmd.req.dat[DAT_MASSAGE] =ShowPar.val&0x60;
-                ShowPar.water_gear= MASSAGE_GEAR_ON3;
+                KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
+                //ShowPar.water_gear= MASSAGE_GEAR_ON3;
                 key_gear = ShowPar.water_gear;
                 key_adjust(key_arry[top],key_gear);
             }
@@ -618,15 +821,30 @@ void WATER_EventHandler(void)
             {
                LED_WATER_OFF;
                del(WATER_VALVE);
-               KeyCmd.req.dat[DAT_MASSAGE] = ShowPar.val&0x60;
-               ShowPar.water_gear= MASSAGE_GEAR_OFF;
+               KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
+               //ShowPar.water_gear= MASSAGE_GEAR_OFF;
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+            dbg("massage dat[%d]:%x\r\n",DAT_MASSAGE, KeyCmd.req.dat[DAT_MASSAGE]);
         }
     }
 
 }
+/*****************************************************************************
+ 函 数 名  : LAMP_EventHandler
+ 功能描述  : 灯光按键处理函数
+ 输入参数  : void
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
 
+ 修改历史      :
+  1.日    期   : 2018年1月5日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
 void LAMP_EventHandler(void)
 {
     if(work_state == WORK_STATE_IDLE)
@@ -634,7 +852,7 @@ void LAMP_EventHandler(void)
         if(KeyPressDown&LAMP_VALVE)
         {
             KeyPressDown = 0;
-            min_time = 0;
+            time_cnt_del(LAMP_VALVE);
             if(lcd_flag ==1)
             {
                 lcd_flag = 0;
@@ -645,8 +863,8 @@ void LAMP_EventHandler(void)
             if(ShowPar.lamp_state == STATE_ON) //打开灯，接着判断有无+ -按键
             {
                LED_LAMP_ON;
-               KeyCmd.req.dat[DAT_LIGHT] = LAMP_CYCLE; //打开默认循环灯
-               ShowPar.lamp_gear = LAMP_CYCLE;
+               KeyCmd.req.dat[DAT_LIGHT] = ShowPar.lamp_gear;
+               //ShowPar.lamp_gear = LAMP_CYCLE;
                add(LAMP_VALVE);
                key_gear = ShowPar.lamp_gear;
                key_adjust(key_arry[top],key_gear);
@@ -655,15 +873,31 @@ void LAMP_EventHandler(void)
             {
                 LED_LAMP_OFF;
                 KeyCmd.req.dat[DAT_LIGHT] = LAMP_OFF;
-                ShowPar.lamp_gear = LAMP_OFF;
+               // ShowPar.lamp_gear = LAMP_OFF;
                 del(LAMP_VALVE);
             }
             KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:06
+            dbg("lamp dat[%d]:%x\r\n",DAT_LIGHT, KeyCmd.req.dat[DAT_LIGHT]);
+
         }
     }
 }
 
+/*****************************************************************************
+ 函 数 名  : LOCK_EventHandler
+ 功能描述  : 童锁按键处理函数
+ 输入参数  : void
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
 
+ 修改历史      :
+  1.日    期   : 2018年1月5日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
 void LOCK_EventHandler(void) //10ms
 {
     if(work_state == WORK_STATE_IDLE)
@@ -673,18 +907,14 @@ void LOCK_EventHandler(void) //10ms
         ShowPar.tap_state = OFF;
         LED_TAP_OFF;
         KeyCmd.req.dat[DAT_FUN_CMD]= FUN_CHANNEL_SWITCH;            // 功能码：进水开关改变
-        KeyCmd.req.dat[DAT_STATE] = ShowPar.val&0x70;
-#if test
-        dbg("idle -> lock,dat[%d]:%d\r\n",DAT_STATE,KeyCmd.req.dat[DAT_STATE]);
-#endif
+        KeyCmd.req.dat[DAT_STATE] = (ShowPar.val&0x07)<<4;
+        dbg("idle -> lock,dat[%d]:%x\r\n",DAT_STATE,KeyCmd.req.dat[DAT_STATE]);
     }
     else if(work_state == WORK_STATE_LOCK)
     {
        show_tempture( ShowPar.temp_val);
        work_state = WORK_STATE_IDLE;
-#if test
        dbg("lock -> idle\r\n");
-#endif
     }
 }
 /*****************************************************************************
@@ -706,19 +936,19 @@ void IDLE_EventHandler(void) //10ms
 {
     if( work_state == WORK_STATE_LOCK)
     {
-        if((min_time%100)==40)//400ms
+        if((Time_t.sleep%100)==40)//400ms
         {
             show_lock();
         }
-        if((min_time%100)==90)//900ms
+        if((Time_t.sleep%100)==90)//900ms
         {
            show_clean();
         }
     }
-    if(min_time++ >=6000) // 1min钟时间到  时基10ms
+    if(Time_t.sleep++ >=6000) // 1min钟时间到  时基10ms
     {
-       min_time = 0;
-       min_cnt++;
+       Time_t.sleep = 0;
+       Time_t.temp38++;
        if(work_state == WORK_STATE_IDLE)
        {
             if(ShowPar.val == OFF)
@@ -730,7 +960,7 @@ void IDLE_EventHandler(void) //10ms
     }
     if(work_state == WORK_STATE_IDLE)
     {
-        if(min_cnt == 30)  //温度保持30min钟 后切换成38度
+        if(Time_t.temp38 >= 30)  //温度保持30min钟 后切换成38度
         {
             if((ShowPar.shower_state== OFF)&&(ShowPar.tap_state == OFF)) //龙头不再进水时
             {
@@ -739,19 +969,25 @@ void IDLE_EventHandler(void) //10ms
                 KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
                 KeyCmd.req.dat[DAT_TEMP_L]  = ShowPar.temp_val;
             }
+            /* BEGIN: Added by zgj, 2018/1/5 */
+             Time_t.temp38 = 0;
         }
-        if(min_cnt == 60) //60min钟到自动关闭龙头及花洒
+
+        /* BEGIN: Deleted by zgj, 2018/1/5 */
+        /*
+        if(Time_t.temp38 == 40) //40min钟到自动关闭龙头及花洒
         {
             if((ShowPar.shower_state== ON)||(ShowPar.tap_state == ON)) //龙头进水时
             {
                 KeyCmd.req.dat[DAT_FUN_CMD]= FUN_CHANNEL_SWITCH;// 功能码：进水开关改变
                 ShowPar.tap_state = OFF;
                 ShowPar.shower_state = OFF;
-                KeyCmd.req.dat[DAT_STATE] = ShowPar.val&0x70;
+                KeyCmd.req.dat[DAT_STATE] = (ShowPar.val&0x07)<<4;
                 show_tempture( ShowPar.temp_val);
             }
-            min_cnt = 0;
+            Time_t.temp38 = 0;
         }
+        */
      }
 }
 
@@ -774,32 +1010,33 @@ void show_work(void)
 {
     if( 1 == ShowPar.switch_flg)
     {
-         switch_time_count ++ ;
-         if( switch_time_count >= 20 ) // 2s时间到
+         Time_t.switch_cnt ++ ;
+         if( Time_t.switch_cnt >= 20 ) // 2s时间到
          {
-            switch_time_count = 0;
+            Time_t.switch_cnt = 0;
             ShowPar.switch_flg = 0;
             show_tempture( ShowPar.temp_val);
          }
     }
     if(1 == key_switch_fag)
     {
-        key_time_adj++;
-        if(key_time_adj>=30) // 3s
+        Time_t.key_adj++;
+        if(Time_t.key_adj>=30) // 3s
         {
-            key_time_adj = 0;
+            Time_t.key_adj = 0;
             key_switch_fag = 0;
             show_tempture( ShowPar.temp_val);
             clear();
+            dbg("clear_adj,key_arry[%d]=%x\r\n",top,key_arry[top]);
         }
     }
     if(1 == incdec_fag)
     {
-        incdec_time++;
-        if(incdec_time>=10)
+        Time_t.incdec++;
+        if(Time_t.incdec>=10)
         {
             incdec_fag = 0;
-            incdec_time = 0;
+            Time_t.incdec = 0;
             LED_DEC_OFF;
             LED_INC_OFF;
         }
@@ -827,14 +1064,14 @@ void show_temp_actul(void) // 100ms
         if((ShowPar.tap_state == ON)||(ShowPar.shower_state == ON )) //出水状态
         {
             uint16 pre_tem;
-            //pre_tem = KeyCmd.req.dat[DAT_TEM_OUT]*10;
+            pre_tem = KeyCmd.req.dat[DAT_TEM_OUT]*10;
             if((pre_tem < ShowPar.temp_val-20)||((pre_tem > ShowPar.temp_val+20))) //达不到预设温度
             {
-                if(tim_cnt<300)
+                if(Time_t.temp_switch<300)
                 {
-                    tim_cnt++;
+                    Time_t.temp_switch++;
                 }
-                if(tim_cnt >= 200)// 20s
+                if(Time_t.temp_switch >= 200)// 20s
                 {
                     static uint8 cnt =0;
                     if((cnt%24)==0)
@@ -862,12 +1099,8 @@ void show_temp_actul(void) // 100ms
             }
             else
             {
-                 tim_cnt = 0;
+                 Time_t.temp_switch = 0;
             }
-        }
-        else
-        {
-             tim_cnt = 0;
         }
     }
 }
@@ -965,7 +1198,7 @@ void key_state(void)
                 if(lcd_flag == 0) //开启状态才显示出来
                 {
                     show_tempture( ShowPar.temp_val);
-                    min_time = 0; //清零重新等一分钟
+                    Time_t.sleep = 0; //清零重新等一分钟
                 }
             }
         }
@@ -1065,8 +1298,8 @@ void receiveHandler(uint8 ui8Data)
 *****************************************************************************/
 void set_temp_val_dec(uint8 val)
 {
-    min_time = 0;
-    min_cnt = 0;
+    Time_t.sleep = 0;
+    Time_t.temp38 = 0;
     if( ShowPar.temp_val > TEMPERATURE_MIN)
     {
         ShowPar.temp_val -= val ;
@@ -1079,6 +1312,7 @@ void set_temp_val_dec(uint8 val)
     KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
     KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
     show_tempture( ShowPar.temp_val);
+    dbg("temp:%d\r\n",ShowPar.temp_val);
 }
 
 /*****************************************************************************
@@ -1098,8 +1332,8 @@ void set_temp_val_dec(uint8 val)
 *****************************************************************************/
 void set_temp_val_inc(uint8 val)
 {
-    min_time = 0;
-    min_cnt = 0;
+    Time_t.sleep = 0;
+    Time_t.temp38 = 0;
     if( ShowPar.temp_val < TEMPERATURE_MAX)
     {
         ShowPar.temp_val += val ;
@@ -1112,6 +1346,7 @@ void set_temp_val_inc(uint8 val)
     KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
     KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
     show_tempture( ShowPar.temp_val);
+    dbg("temp:%d\r\n",ShowPar.temp_val);
 }
 
 
@@ -1134,6 +1369,12 @@ void BSP_init(void)
 {
     LED_INIT();
     KEY_SBIO_IN;  //RB口设置成输入模式
+    /* BEGIN: Added by zgj, 2018/1/5 */
+    //初始化灯颜色，按摩档位
+    ShowPar.lamp_gear = LAMP_PINK;
+    ShowPar.water_gear = MASSAGE_GEAR_ON3;
+    ShowPar.air_gear = MASSAGE_GEAR_ON3;
+    /* END:   Added by zgj, 2018/1/5 */
     KeyCmd.req.sta_num = 0x32;
     KeyCmd.req.spare1  = 0x3B;
     ShowPar.temp_val = 380;

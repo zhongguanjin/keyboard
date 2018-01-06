@@ -2,8 +2,9 @@
 #include "lcd.h"
 #include "task_main.h"
 
+uint8 digi_flg = 0;
 
-uint8 tap_val[17]={
+uint8 tab_num[10]={
 0x40,   //0
 0x79,  // 1
 0x24,  // 2
@@ -14,10 +15,23 @@ uint8 tap_val[17]={
 0x78,   //7
 0x00,   //8
 0x10, //9
+};
+
+uint8 tab_val[17]={
+0xc0,   //0
+0xf9,  // 1
+0xa4,  // 2
+0xb0,
+0x99,  // 4
+0x92,   // 5
+0x82,   // 6
+0xf8,
+0x80,
+0x90, //9
 0xbf, // -
 0xab, //11 N
 0x8e, //12 F
-0xff, //13clear
+0xff, // clear
 0x8c, //14p-水按摩
 0x86, //15e-qi按摩
 0xc6, //16c-灯
@@ -27,11 +41,7 @@ uint8 tap_val[17]={
 
 uint8 digiBuf[3]; //数码管缓冲区
 
-void MatrixOutputData(void *p)
-{
-   uint8 *temp =p;
-   LED_SEG_DAT = *temp;
-}
+
 
 void led_scan(void)
 {
@@ -41,8 +51,14 @@ void led_scan(void)
     LED_COM2_L;
     LED_COM3_L;
     LED_SEIO_OUT_L;
-    //MatrixOutputData(&tap_val[digiBuf[digiPos]]);
-    LED_SEG_DAT =tap_val[digiBuf[digiPos]];
+    if(digi_flg == 1) //清除小数点
+    {
+       LED_SEG_DAT =tab_val[digiBuf[digiPos]];
+    }
+    else //显示温度有小数点
+    {
+        LED_SEG_DAT =tab_num[digiBuf[digiPos]];
+    }
     switch(digiPos)
     {
         case 0: LED_COM1_L;LED_COM2_H;LED_COM3_H; break; // 选择第一列数码管
@@ -59,6 +75,7 @@ void led_scan(void)
 
 void show_tempture( uint16 data)
 {
+    digi_flg = 0;
     digiBuf[0] = data/100;
     digiBuf[1] = (data%100)/10;
     digiBuf[2] = data%10;
@@ -66,6 +83,7 @@ void show_tempture( uint16 data)
 
 void show_lock ()
 {
+    digi_flg = 1;
     digiBuf[0] = 10;
     digiBuf[1] = 10;
     digiBuf[2] = 10;
@@ -73,6 +91,7 @@ void show_lock ()
 
 void show_clean ( )
 {
+    digi_flg = 1;
     digiBuf[0] = 13;
     digiBuf[1] = 13;
     digiBuf[2] = 13;
@@ -80,26 +99,27 @@ void show_clean ( )
 
 void show_adj_key(uint8 id,uint8 dat)
 {
+    digi_flg = 1;
     switch ( id )
     {
         case LAMP_VALVE:
             {
-                digiBuf[0] = 13;
-                digiBuf[1] = 16;
+                digiBuf[0] = 16;
+                digiBuf[1] = 0;
                 digiBuf[2] = dat%10;
                 break;
             }
         case AIR_VALVE:
             {
-                digiBuf[0] = 13;
-                digiBuf[1] = 15;
+                digiBuf[0] = 15;
+                digiBuf[1] = 0;
                 digiBuf[2] = dat%10;
                 break;
             }
         case WATER_VALVE:
             {
-                digiBuf[0] = 13;
-                digiBuf[1] = 14;
+                digiBuf[0] = 14;
+                digiBuf[1] = 0;
                 digiBuf[2] = dat%10;
                 break;
             }
@@ -111,6 +131,7 @@ void show_adj_key(uint8 id,uint8 dat)
 }
 void write_err_num(uint8 dat)
 {
+    digi_flg = 1;
       switch ( dat )
       {
           case ERR_F1:
@@ -147,6 +168,7 @@ void write_err_num(uint8 dat)
 }
 void show_state(uint8 state)
 {
+    digi_flg = 1;
     if(state == STATE_ON)
     {
         digiBuf[0] = 0;//clear
