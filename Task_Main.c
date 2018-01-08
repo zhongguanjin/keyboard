@@ -53,6 +53,7 @@ void LOCK_EventHandler(void);
 void IDLE_EventHandler(void);
 void key_adjust(uint8 id,uint8 dat);
 void time_cnt_del( uint8 id);
+void CLEAN_EventHandler(void);
 
 
 
@@ -187,6 +188,11 @@ void TaskKeyPrs(void)  //10MS
             LAMP_EventHandler();
             break;
         }
+		case CLEAN_VALVE:
+		{
+			CLEAN_EventHandler();
+            break;
+		}
         case LOCK_VALVE:
         {
             static uint16 count =0;
@@ -828,6 +834,14 @@ void WATER_EventHandler(void)
             dbg("massage dat[%d]:%x\r\n",DAT_MASSAGE, KeyCmd.req.dat[DAT_MASSAGE]);
         }
     }
+	if(work_state == WORK_STATE_CLEAN)
+	{
+		LED_WATER_OFF;
+		LED_INC_OFF;
+		work_state =WORK_STATE_IDLE;
+		KeyCmd.req.dat[DAT_FUN_CMD] =0x0A;
+		KeyCmd.req.dat[DAT_STATE] = 0x00;
+	}
 
 }
 /*****************************************************************************
@@ -989,6 +1003,38 @@ void IDLE_EventHandler(void) //10ms
         }
         */
      }
+}
+
+/*****************************************************************************
+ 函 数 名  : CLEAN_EventHandler
+ 功能描述  : 清洁功能回调函数
+ 输入参数  : void
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
+
+ 修改历史      :
+  1.日    期   : 2018年1月6日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
+void CLEAN_EventHandler(void)
+{
+	if(work_state == WORK_STATE_IDLE)
+	{
+		static uint16 time_clean=0;
+		if((time_clean++)>=300)// 3s
+		{
+			time_clean=0;
+			LED_INC_ON;
+			LED_WATER_ON;
+			work_state = WORK_STATE_CLEAN;
+			KeyCmd.req.dat[DAT_FUN_CMD] =0x0A;
+			KeyCmd.req.dat[DAT_STATE] = 0x08;
+		}
+	}
 }
 
 /*****************************************************************************

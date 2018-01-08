@@ -28,6 +28,7 @@ typedef struct _TASK_COMPONENTS
 #define   LAMP_VALVE         0X80
 
 #define   LOCK_VALVE        (TAP_VALVE|SHOWER_VALVE|DEC_VALVE)
+#define   CLEAN_VALVE       (INC_VALVE|WATER_VALVE)
 
 
 //key io
@@ -52,6 +53,7 @@ enum
   WORK_STATE_IDLE = 0,
   WORK_STATE_LOCK,      //¶ùÍ¯Ëø
   WORK_STATE_ERR,
+  WORK_STATE_CLEAN,
   WORK_STATE_MAX
 };
 
