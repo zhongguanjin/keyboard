@@ -1310,22 +1310,23 @@ void receiveHandler(uint8 ui8Data)
             {
                 if(CRC8_SUM(&Recv_Buf[1], crc_len) == Recv_Buf[14])
                 {
-                    frame_ok_fag =1;
                     Recv_Len = 0;
+                    frame_ok_fag=1;
                 }
                 else
                 {
-                    memset(Recv_Buf,0,sizeof(Recv_Buf));
-                    Recv_Len = 0;
+                     Recv_Len = 0;
+                     frame_ok_fag=0;
                 }
             }
-            else  //结束码或者地址不对
+            if((Recv_Buf[15]!= 0x34)||(Recv_Buf[2] != 0x01)||(Recv_Buf[1] != 0xB3))  //结束码或者地址不对
             {
-                memset(Recv_Buf,0,sizeof(Recv_Buf));
-                Recv_Len = 0;
+                 Recv_Len = 0;
+                 frame_ok_fag = 0;
             }
         }
     }
+
 }
 /*****************************************************************************
  函 数 名  : set_temp_val_dec
