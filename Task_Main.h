@@ -17,7 +17,6 @@ typedef struct _TASK_COMPONENTS
 /*按键功能定义*/
 
 #define   ALL_CLOSE          0X00
-
 #define   TAP_VALVE          0X01
 #define   SHOWER_VALVE       0X02
 #define   DRAIN_VALVE        0X04
@@ -38,11 +37,12 @@ typedef struct _TASK_COMPONENTS
 
 #define   TEMPERATURE_MAX     460         // 最大温度
 #define   TEMPERATURE_MIN     150         // 最低温度
-#define     BUF_SIZE   16
+
+#define     BUF_SIZE   32
 #define     send_cnt   1
-#define     crc_len    (BUF_SIZE-3)
-uint8       Recv_Buf[BUF_SIZE+10];
-uint8       Send_Buf[BUF_SIZE+10];
+#define     crc_len    (BUF_SIZE-5)
+uint8       Recv_Buf[BUF_SIZE+8];
+uint8       Send_Buf[BUF_SIZE+8];
 
 
 uint8 frame_ok_fag;       //一帧数据正确标志
