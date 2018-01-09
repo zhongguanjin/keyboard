@@ -376,7 +376,7 @@ void TAP_EventHandler(void)
             {
                LED_TAP_OFF;
             }
-            KeyCmd.req.dat[DAT_FUN_CMD]= FUN_CHANNEL_SWITCH;  // 功能码：进水开关改变
+            KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;  // 功能码：进水开关改变
             KeyCmd.req.dat[DAT_STATE] = (ShowPar.val&0x07)<<4;
             ShowPar.switch_flg = STATE_ON;
             show_state(ShowPar.tap_state);
@@ -424,7 +424,7 @@ void SHOWER_EventHandler(void)
             {
                LED_SHOWER_OFF;
             }
-            KeyCmd.req.dat[DAT_FUN_CMD]= FUN_CHANNEL_SWITCH;            // 功能码：进水开关改变
+            KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
             KeyCmd.req.dat[DAT_STATE] = (ShowPar.val&0x07)<<4;
             ShowPar.switch_flg = STATE_ON;
             show_state(ShowPar.shower_state);
@@ -920,7 +920,7 @@ void LOCK_EventHandler(void) //10ms
         ShowPar.shower_state = OFF;
         ShowPar.tap_state = OFF;
         LED_TAP_OFF;
-        KeyCmd.req.dat[DAT_FUN_CMD]= FUN_CHANNEL_SWITCH;            // 功能码：进水开关改变
+        KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
         KeyCmd.req.dat[DAT_STATE] = (ShowPar.val&0x07)<<4;
         dbg("idle -> lock,dat[%d]:%x\r\n",DAT_STATE,KeyCmd.req.dat[DAT_STATE]);
     }
@@ -979,7 +979,7 @@ void IDLE_EventHandler(void) //10ms
             if((ShowPar.shower_state== OFF)&&(ShowPar.tap_state == OFF)) //龙头不再进水时
             {
                 ShowPar.temp_val = 380;
-                KeyCmd.req.dat[DAT_FUN_CMD]= FUN_CHANNEL_SWITCH;        // 功能码：水龙头出水温度改变
+                KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;        // 功能码：水龙头出水温度改变
                 KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
                 KeyCmd.req.dat[DAT_TEMP_L]  = ShowPar.temp_val;
             }
@@ -993,7 +993,7 @@ void IDLE_EventHandler(void) //10ms
         {
             if((ShowPar.shower_state== ON)||(ShowPar.tap_state == ON)) //龙头进水时
             {
-                KeyCmd.req.dat[DAT_FUN_CMD]= FUN_CHANNEL_SWITCH;// 功能码：进水开关改变
+                KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;// 功能码：进水开关改变
                 ShowPar.tap_state = OFF;
                 ShowPar.shower_state = OFF;
                 KeyCmd.req.dat[DAT_STATE] = (ShowPar.val&0x07)<<4;
@@ -1355,7 +1355,7 @@ void set_temp_val_dec(uint8 val)
             ShowPar.temp_val = TEMPERATURE_MIN;
         }
     }
-    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_CHANNEL_SWITCH;                              // 功能码：水龙头出水温度改变
+    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;                              // 功能码：水龙头出水温度改变
     KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
     KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
     show_tempture( ShowPar.temp_val);
@@ -1389,7 +1389,7 @@ void set_temp_val_inc(uint8 val)
             ShowPar.temp_val = TEMPERATURE_MAX;
         }
     }
-    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_CHANNEL_SWITCH;        // 功能码：水龙头出水温度改变
+    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;        // 功能码：水龙头出水温度改变
     KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
     KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
     show_tempture( ShowPar.temp_val);

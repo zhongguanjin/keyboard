@@ -17,7 +17,6 @@ typedef struct _TASK_COMPONENTS
 /*按键功能定义*/
 
 #define   ALL_CLOSE          0X00
-
 #define   TAP_VALVE          0X01
 #define   SHOWER_VALVE       0X02
 #define   DRAIN_VALVE        0X04
@@ -38,11 +37,12 @@ typedef struct _TASK_COMPONENTS
 
 #define   TEMPERATURE_MAX     460         // 最大温度
 #define   TEMPERATURE_MIN     150         // 最低温度
-#define     BUF_SIZE   16
+
+#define     BUF_SIZE   32
 #define     send_cnt   1
-#define     crc_len    (BUF_SIZE-3)
-uint8       Recv_Buf[BUF_SIZE+10];
-uint8       Send_Buf[BUF_SIZE+10];
+#define     crc_len    (BUF_SIZE-5)
+uint8       Recv_Buf[BUF_SIZE+8];
+uint8       Send_Buf[BUF_SIZE+8];
 
 
 uint8 frame_ok_fag;       //一帧数据正确标志
@@ -59,58 +59,73 @@ enum
 
 
 /*
-功能码
-温度高
-温度低
-流量档位
-保温温度
-按摩信息
-液位+灯光
-龙头+花洒+下水器
-出水温度
-错误码
+0-  地址码
+1-  功能码
+2-  数据码
+3-  温度高
+4-  温度低
+5-  流量档位
+6-  出水温度
+7-  保温温度
+8-  液位信息
+9-  按摩信息
+10- 龙头+花洒
+11- 灯光
+12- 保温状态
+13- 下水器
+14- 管道清洁
 保留
+18- 错误码
 */
 //DAT数据枚举变量
 enum
 {
-    DAT_FUN_CMD = 0,
+    DAT_ADDR = 0,
+    DAT_FUN_CMD,
+    DAT_VALVE,
     DAT_TEMP_H,
     DAT_TEMP_L,
-    DAT_FLOW,
-    DAT_TEM_PRE, // 4
-    DAT_MASSAGE,  //5
-    DAT_LIGHT,   //6
-    DAT_STATE,       //7
-    DAT_TEM_OUT,  //8
-    DAT_ERR_NUM,   //9
+    DAT_FLOW,          //5
+    DAT_TEM_OUT,       //6
+    DAT_TEM_PRE,      // 7
+    DAT_LIQUID,       //8
+    DAT_MASSAGE,      //9
+    DAT_STATE,        //10
+    DAT_LIGHT,        //11
+    DAT_KEEP_WARM,   //12
+    DAT_DRAIN,       //13
+    DAT_CLAEN,
     DAT_SPARE1,
+    DAT_SPARE2,
+    DAT_SPARE3,
+    DAT_ERR_NUM,   //18
     DAT_MAX
 };
 
 /*
-0x00 -- 空指令
+0x00 -- 空指令 查询
 0x01 -- 进水通道切换(此时流量与温度对应发生变化)
 0x02 -- 排水
-0x03 -- 按摩
-0x04 -- 灯光
-0x05 -- 循环保温
-0x06 -- 温度变化
-0x07 -- 流量变化
-0x08 -- 清洁功能
-0x09 --
+0x03 -- 流量变化
+0x04 -- 温度变化
+0x05 -- 按摩
+0x06 -- 保温
+0x07 -- 清洁功能
+0x08 -- 灯光
+0x09 -- 童锁
 */
 enum
 {
     FUN_IDLE =0,
-    FUN_CHANNEL_SWITCH,
-    FUN_DRAINAGE,
-    FUN_MASSAGE,
-    FUN_LIGHT,
-    FUN_CYCLE, //5
-    FUN_TEMP,
+    FUN_INFLOW,
+    FUN_DRAINAGE,   // 2
     FUN_FLOW,
-    FUN_CLEAN, //8
+    FUN_TEMP,
+    FUN_MASSAGE,     //5
+    FUN_KEEP_WARM,  //6
+    FUN_CLEAN,      //7
+    FUN_LIGHT,      //8
+    FUN_LOCK,       //9
     FUN_MAX
 };
 
@@ -179,21 +194,21 @@ typedef struct
 {
     struct
     {
-        uint8 sta_num;
-        uint8 spare1;
-        uint8 dev_addr;
-        uint8 dat[BUF_SIZE-5];
+        uint8 sta_num1;
+        uint8 sta_num2;
+        uint8 dat[crc_len];
         uint8 crc_num;
+        uint8 end_unm1;
         uint8 end_num;
     }req;               //发送
     struct
     {
-        uint8 sta_num;
-        uint8 spare1;
-        uint8 dev_addr;
-        uint8 dat[BUF_SIZE-5];
+        uint8 sta_num1;
+        uint8 sta_num2;
+        uint8 dat[crc_len];
         uint8 crc_num;
-        uint8 end_num;
+        uint8 end_unm1;
+        uint8 end_num2;
     }rsp;                   //接收
 }tKeyCmd_t;
 
