@@ -34,7 +34,7 @@ static uint8 key_arry[SIZE]; //按键堆栈数组
 static int top = 0;
 
 //函数申明
-uint8 CRC8_SUM(uint8 * p, uint8 len);
+uint8 CRC8_SUM(void * p, uint8 len);
 void TaskShow(void);
 void TaskKeyScan(void);
 void TaskKeyPrs(void);
@@ -378,7 +378,7 @@ void TAP_EventHandler(void)
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;  // 功能码：进水开关改变
             KeyCmd.req.dat[DAT_STATE] = ShowPar.val&0x03;
-            KeyCmd.req.dat[DAT_VALVE] = ShowPar.tap_state; //数据码 龙头状态
+            KeyCmd.req.dat[DAT_VALVE] =  ShowPar.val&0x03; //数据码 龙头状态
             ShowPar.switch_flg = STATE_ON;
             show_state(ShowPar.tap_state);
             dbg("tap,dat[%d]:%x\r\n",DAT_STATE,KeyCmd.req.dat[DAT_STATE]);
@@ -427,7 +427,7 @@ void SHOWER_EventHandler(void)
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
             KeyCmd.req.dat[DAT_STATE] = ShowPar.val&0x03;
-            KeyCmd.req.dat[DAT_VALVE] = ShowPar.shower_state; //数据码 花洒
+            KeyCmd.req.dat[DAT_VALVE] =  ShowPar.val&0x03; //数据码 花洒
             ShowPar.switch_flg = STATE_ON;
             show_state(ShowPar.shower_state);
             dbg("shower,dat[%d]:%x\r\n",DAT_STATE,KeyCmd.req.dat[DAT_STATE]);
@@ -1189,28 +1189,17 @@ void show_temp_actul(void) // 100ms
     修改内容   : 新生成函数
 
 *****************************************************************************/
-
-uint8 crc8 = 0;
-uint8 temp[32];
-uint8 CRC8_SUM(uint8 *p,uint8 len)
+uint8 CRC8_SUM(void *p,uint8 len)
 {
-    //uint8
-	crc8 = 0;
-    //uint8 *temp =p;
-	uint8 j;
-
-	for(j=0;j<32;j++)
-	{
-		temp[j] = j;
-	}
+    uint8 crc8 = 0;
+    uint8 *temp =p;
     for(uint8 i=0;i<len;i++)
     {
-        crc8 ^= temp[i];
-    //    temp++;
+        crc8 ^=*temp;
+        temp++;
     }
     return crc8;
 }
-
 /*****************************************************************************
  函 数 名  : key_state
  功能描述  : 状态更新同步函数
@@ -1330,24 +1319,21 @@ void Serial_Processing (void)
     修改内容   : 新生成函数
 
 *****************************************************************************/
-uint8 check_sum = 0;
 void receiveHandler(uint8 ui8Data)
 {
+    uint8 check_sum = 0;
     Recv_Buf[Recv_Len] = ui8Data;
     if(Recv_Buf[0]==0x02)
     {
         Recv_Len++;
         if(Recv_Len >= BUF_SIZE) //接收到32byte的数据
         {
-            if((Recv_Buf[31]== 0x04)&&(Recv_Buf[30]== 0x0F)&&(Recv_Buf[2] == 0x01)&&(Recv_Buf[1] == 0x3A))
-            {   /*
+            if((Recv_Buf[31]== 0x04)&&(Recv_Buf[30]== 0x0B)&&(Recv_Buf[2] == 0x01)&&(Recv_Buf[1] == 0x3A))
+            {
                 for(uint8 i=2;i<crc_len;i++)
                 {
                     check_sum^=Recv_Buf[i];
                 }
-                */
-                check_sum=8;
-               check_sum=CRC8_SUM(&Recv_Buf[2], crc_len);
                 if(check_sum == Recv_Buf[29])
                 //if(CRC8_SUM(&Recv_Buf[2], crc_len) == Recv_Buf[29])
                 {
@@ -1360,7 +1346,7 @@ void receiveHandler(uint8 ui8Data)
                      frame_ok_fag=0;
                 }
             }
-           if((Recv_Buf[31]!= 0x04)||(Recv_Buf[30]!= 0x0F)||(Recv_Buf[2] != 0x01)||(Recv_Buf[1] != 0x3A))  //结束码或者地址不对
+           if((Recv_Buf[31]!= 0x04)||(Recv_Buf[30]!= 0x0B)||(Recv_Buf[2] != 0x01)||(Recv_Buf[1] != 0x3A))  //结束码或者地址不对
             {
                  Recv_Len = 0;
                  frame_ok_fag = 0;
@@ -1464,7 +1450,7 @@ void BSP_init(void)
     ShowPar.air_gear = MASSAGE_GEAR_ON3;
     /* END:   Added by zgj, 2018/1/5 */
     KeyCmd.req.sta_num1 = 0x02;
-    KeyCmd.req.sta_num2  = 0x3A;
+    KeyCmd.req.sta_num2  = 0xA3;
     ShowPar.temp_val = 380;
     KeyCmd.req.dat[DAT_ADDR]  = 0x01;
     KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
