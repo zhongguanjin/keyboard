@@ -95,7 +95,7 @@ enum
     DAT_KEEP_WARM,   //12
     DAT_DRAIN,       //13
     DAT_CLAEN,
-    DAT_SPARE1,
+    DAT_LOCK,       //15
     DAT_SPARE2,
     DAT_SPARE3,
     DAT_ERR_NUM,   //18
@@ -198,8 +198,8 @@ typedef struct
         uint8 sta_num2;
         uint8 dat[crc_len];
         uint8 crc_num;
-        uint8 end_unm1;
-        uint8 end_num;
+        uint8 end_num1;
+        uint8 end_num2;
     }req;               //∑¢ÀÕ
     struct
     {
@@ -207,7 +207,7 @@ typedef struct
         uint8 sta_num2;
         uint8 dat[crc_len];
         uint8 crc_num;
-        uint8 end_unm1;
+        uint8 end_num1;
         uint8 end_num2;
     }rsp;                   //Ω” ’
 }tKeyCmd_t;

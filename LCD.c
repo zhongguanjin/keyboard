@@ -73,7 +73,7 @@ void led_scan(void)
 }
 
 
-void show_tempture( uint16 data)
+void show_tempture( uint16 data)//温度显示
 {
     digi_flg = 0;
     digiBuf[0] = data/100;
@@ -81,15 +81,15 @@ void show_tempture( uint16 data)
     digiBuf[2] = data%10;
 }
 
-void show_lock ()
+void show_lock ()//童锁显示
 {
     digi_flg = 1;
-    digiBuf[0] = 10;
-    digiBuf[1] = 10;
-    digiBuf[2] = 10;
+    digiBuf[0] = 0;
+    digiBuf[1] = 0;
+    digiBuf[2] = 13;
 }
 
-void show_clean ( )
+void show_sleep ( )  //lcd 关闭
 {
     digi_flg = 1;
     digiBuf[0] = 13;
@@ -97,7 +97,15 @@ void show_clean ( )
     digiBuf[2] = 13;
 }
 
-void show_adj_key(uint8 id,uint8 dat)
+void show_clean() //清洁显示
+{
+    digi_flg = 1;
+    digiBuf[0] = 10;
+    digiBuf[1] = 10;
+    digiBuf[2] = 10;
+}
+
+void show_adj_key(uint8 id,uint8 dat) //档位调节显示
 {
     digi_flg = 1;
     switch ( id )
@@ -129,7 +137,8 @@ void show_adj_key(uint8 id,uint8 dat)
             }
     }
 }
-void write_err_num(uint8 dat)
+
+void write_err_num(uint8 dat) //故障码显示
 {
     digi_flg = 1;
       switch ( dat )
@@ -166,7 +175,8 @@ void write_err_num(uint8 dat)
       }
 
 }
-void show_state(uint8 state)
+
+void show_state(uint8 state) //状态显示
 {
     digi_flg = 1;
     if(state == STATE_ON)
