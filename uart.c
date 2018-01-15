@@ -3,7 +3,7 @@
 
 
 #define 	PIC_CLK 		    16000000                     // 时钟频率
-#define     BAUD                9600                         //波特率
+#define     BAUD                9600                        //波特率
 #define     SPBRGx_VAL          ((PIC_CLK/(16UL * BAUD) -1))
 
 

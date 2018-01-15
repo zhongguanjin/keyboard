@@ -42,7 +42,6 @@ typedef struct _TASK_COMPONENTS
 #define     send_cnt   1
 #define     crc_len    (BUF_SIZE-5)
 uint8       Recv_Buf[BUF_SIZE+8];
-uint8       Send_Buf[BUF_SIZE+8];
 
 
 uint8 frame_ok_fag;       //一帧数据正确标志

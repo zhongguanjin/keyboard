@@ -377,7 +377,6 @@ void TAP_EventHandler(void)
                LED_TAP_OFF;
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;  // 功能码：进水开关改变
-            KeyCmd.req.dat[DAT_STATE] = ShowPar.val&0x03;
             KeyCmd.req.dat[DAT_VALVE] =  ShowPar.val&0x03; //数据码 龙头状态
             ShowPar.switch_flg = STATE_ON;
             show_state(ShowPar.tap_state);
@@ -426,7 +425,6 @@ void SHOWER_EventHandler(void)
                LED_SHOWER_OFF;
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
-            KeyCmd.req.dat[DAT_STATE] = ShowPar.val&0x03;
             KeyCmd.req.dat[DAT_VALVE] =  ShowPar.val&0x03; //数据码 花洒
             ShowPar.switch_flg = STATE_ON;
             show_state(ShowPar.shower_state);
@@ -473,11 +471,10 @@ void DRAIN_EventHandler(void)
                LED_DRAIN_OFF;
             }
             KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE;
-            KeyCmd.req.dat[DAT_DRAIN] = ShowPar.drain_state;
             KeyCmd.req.dat[DAT_VALVE] = ShowPar.drain_state; //数据码 排水
             ShowPar.switch_flg = STATE_ON;
             show_state(ShowPar.drain_state);
-            dbg("drainage,dat[%d]:%x\r\n",DAT_DRAIN,KeyCmd.req.dat[DAT_DRAIN]);
+            dbg("drainage,%x\r\n",KeyCmd.req.dat[DAT_DRAIN]);
         }
     }
 }
@@ -564,9 +561,8 @@ void INC_EventHandler(void)
                         key_gear = ShowPar.lamp_gear;
                         key_adjust(key_arry[top],key_gear);
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:08
-                        KeyCmd.req.dat[DAT_LIGHT] = ShowPar.lamp_gear;
                         KeyCmd.req.dat[DAT_VALVE] = ShowPar.lamp_gear;
-                        dbg("lamp dat[%d]:%x\r\n",DAT_LIGHT, KeyCmd.req.dat[DAT_LIGHT]);
+                        dbg("lamp %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
                     }
                     break;
                 }
@@ -583,9 +579,8 @@ void INC_EventHandler(void)
                         key_gear = ShowPar.water_gear;
                         key_adjust(key_arry[top],key_gear);
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:05
-                        KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                         KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5); //数据码
-                        dbg("massage dat[%d]:%x\r\n",DAT_MASSAGE, KeyCmd.req.dat[DAT_MASSAGE]);
+                        dbg("massage %x\r\n",KeyCmd.req.dat[DAT_MASSAGE]);
                     }
                     break;
                 }
@@ -602,9 +597,8 @@ void INC_EventHandler(void)
                         key_gear = ShowPar.air_gear;
                         key_adjust(key_arry[top],key_gear);
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:07
-                        KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                         KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5); //数据码
-                        dbg("massage dat[%d]:%x\r\n",DAT_MASSAGE, KeyCmd.req.dat[DAT_MASSAGE]);
+                        dbg("massage %x\r\n",KeyCmd.req.dat[DAT_MASSAGE]);
                     }
                     break;
                 }
@@ -694,9 +688,8 @@ void DEC_EventHandler(void)
                        key_gear = ShowPar.lamp_gear;
                        key_adjust(key_arry[top],key_gear);
                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:06
-                       KeyCmd.req.dat[DAT_LIGHT]=ShowPar.lamp_gear;
                        KeyCmd.req.dat[DAT_VALVE]=ShowPar.lamp_gear;
-                       dbg("lamp dat[%d]:%x\r\n",DAT_LIGHT, KeyCmd.req.dat[DAT_LIGHT]);
+                       dbg("lamp %x\r\n", KeyCmd.req.dat[DAT_VALVE]);
                     }
                     break;
                 }
@@ -713,9 +706,8 @@ void DEC_EventHandler(void)
                         key_gear = ShowPar.water_gear;
                         key_adjust(key_arry[top],key_gear);
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:07
-                        KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                         KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
-                        dbg("massage dat[%d]:%x\r\n",DAT_MASSAGE, KeyCmd.req.dat[DAT_MASSAGE]);
+                        dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
                     }
                     break;
                 }
@@ -732,9 +724,8 @@ void DEC_EventHandler(void)
                         key_gear = ShowPar.air_gear;
                         key_adjust(key_arry[top],key_gear);
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:07
-                        KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                         KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
-                        dbg("massage dat[%d]:%x\r\n",DAT_MASSAGE, KeyCmd.req.dat[DAT_MASSAGE]);
+                        dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
                     }
                     break;
                 }
@@ -775,7 +766,6 @@ void AIR_EventHandler(void)
             {
                 LED_AIR_ON;
                 add(AIR_VALVE);
-                KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                 KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                 //ShowPar.air_gear= MASSAGE_GEAR_ON3;
                 key_gear = ShowPar.air_gear;
@@ -785,12 +775,11 @@ void AIR_EventHandler(void)
             {
                LED_AIR_OFF;
                del(AIR_VALVE);
-               KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                //ShowPar.air_gear= MASSAGE_GEAR_OFF;
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
-            dbg("massage dat[%d]:%x\r\n",DAT_MASSAGE, KeyCmd.req.dat[DAT_MASSAGE]);
+            dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
         }
     }
 
@@ -829,7 +818,6 @@ void WATER_EventHandler(void)
             {
                 LED_WATER_ON;
                 add(WATER_VALVE);
-                KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                 KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                 //ShowPar.water_gear= MASSAGE_GEAR_ON3;
                 key_gear = ShowPar.water_gear;
@@ -839,12 +827,11 @@ void WATER_EventHandler(void)
             {
                LED_WATER_OFF;
                del(WATER_VALVE);
-               KeyCmd.req.dat[DAT_MASSAGE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                //ShowPar.water_gear= MASSAGE_GEAR_OFF;
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
-            dbg("massage dat[%d]:%x\r\n",DAT_MASSAGE, KeyCmd.req.dat[DAT_MASSAGE]);
+            dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
         }
     }
 	if(work_state == WORK_STATE_CLEAN)
@@ -891,7 +878,6 @@ void LAMP_EventHandler(void)
             if(ShowPar.lamp_state == STATE_ON) //打开灯，接着判断有无+ -按键
             {
                LED_LAMP_ON;
-               KeyCmd.req.dat[DAT_LIGHT] = ShowPar.lamp_gear;
                KeyCmd.req.dat[DAT_VALVE] = ShowPar.lamp_gear;
                //ShowPar.lamp_gear = LAMP_CYCLE;
                add(LAMP_VALVE);
@@ -901,13 +887,12 @@ void LAMP_EventHandler(void)
             else  //关灯off
             {
                 LED_LAMP_OFF;
-                KeyCmd.req.dat[DAT_LIGHT] = LAMP_OFF;
                 KeyCmd.req.dat[DAT_VALVE] = LAMP_OFF;
                // ShowPar.lamp_gear = LAMP_OFF;
                 del(LAMP_VALVE);
             }
             KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:06
-            dbg("lamp dat[%d]:%x\r\n",DAT_LIGHT, KeyCmd.req.dat[DAT_LIGHT]);
+            dbg("lamp %x\r\n", KeyCmd.req.dat[DAT_VALVE]);
 
         }
     }
@@ -939,7 +924,7 @@ void LOCK_EventHandler(void) //10ms
         KeyCmd.req.dat[DAT_FUN_CMD]= FUN_LOCK;            // 功能码：进水开关改变
         KeyCmd.req.dat[DAT_VALVE] = 0x01;
         KeyCmd.req.dat[DAT_LOCK] = 0x01;
-        dbg("idle -> lock,dat[%d]:%x\r\n",DAT_VALVE,KeyCmd.req.dat[DAT_VALVE]);
+        dbg("idle -> lock,%x\r\n",KeyCmd.req.dat[DAT_VALVE]);
     }
     else if(work_state == WORK_STATE_LOCK)
     {
@@ -979,14 +964,17 @@ void IDLE_EventHandler(void) //10ms
            show_sleep();
         }
     }
+    dbg("val:%d,time:%d\r\n",ShowPar.val,Time_t.sleep);
     if(Time_t.sleep++ >=6000) // 1min钟时间到  时基10ms
     {
        Time_t.sleep = 0;
        Time_t.temp38++;
        if(work_state == WORK_STATE_IDLE)
        {
-            if(ShowPar.val == OFF)
+            dbg("1 min get\r\n");
+            if((ShowPar.val&0xfb)== OFF)
             {
+                dbg("sleep\r\n");
                 show_sleep();
                 lcd_flag = 1;  //置位关闭标志位
             }
@@ -1201,7 +1189,7 @@ uint8 CRC8_SUM(void *p,uint8 len)
     return crc8;
 }
 /*****************************************************************************
- 函 数 名  : key_state
+ 函 数 名  : key_state_update
  功能描述  : 状态更新同步函数
  输入参数  : void
  输出参数  : 无
@@ -1215,43 +1203,127 @@ uint8 CRC8_SUM(void *p,uint8 len)
     修改内容   : 新生成函数
 
 *****************************************************************************/
-void key_state(void)
+void key_state_update(void)
 {
-/*
-    //水龙头及花洒状态更新
-    if(KeyCmd.rsp.dat[DAT_INFO]!=KeyCmd.req.dat[DAT_INFO])
+    /* BEGIN: Added by zgj, 2018/1/15 */
+    if(KeyCmd.rsp.dat[DAT_MASSAGE]!=KeyCmd.req.dat[DAT_MASSAGE]) //按摩状态更新
     {
-        if((KeyCmd.rsp.dat[DAT_INFO]&0x10)== 0x10) //tap 打开 0010 0000
+        ShowPar.air_gear = (KeyCmd.rsp.dat[DAT_MASSAGE]&0xE0)>>5;
+        ShowPar.water_gear = (KeyCmd.rsp.dat[DAT_MASSAGE]&0x1C)>>2;
+        KeyCmd.req.dat[DAT_MASSAGE] =KeyCmd.rsp.dat[DAT_MASSAGE];
+        switch ( KeyCmd.rsp.dat[DAT_MASSAGE]&0x03)
         {
-            ShowPar.tap_state = STATE_ON;
+            case 0:
+                {
+                    ShowPar.air_state = OFF;
+                    ShowPar.water_state =OFF;
+                    LED_WATER_OFF;
+                    LED_AIR_OFF;
+                }
+                break;
+            case 1 :
+                {
+                    ShowPar.air_state = OFF;
+                    ShowPar.water_state =ON;
+                    LED_WATER_ON;
+                    LED_AIR_OFF;
+                }
+                 break;
+            case 2 :
+                {
+                    ShowPar.air_state = ON;
+                    ShowPar.water_state =OFF;
+                    LED_WATER_OFF;
+                    LED_AIR_ON;
+                }
+                break;
+            case 3 :
+                {
+                    ShowPar.air_state = ON;
+                    ShowPar.water_state =ON;
+                    LED_WATER_ON;
+                    LED_AIR_ON;
+                }
+                break;
         }
-        else
-        {
-            ShowPar.tap_state = STATE_OFF;
-        }
-        if((KeyCmd.rsp.dat[DAT_INFO]&0x20) == 0x20) //shower 打开 0001 0000
-        {
-            ShowPar.shower_state = STATE_ON;
-        }
-        else
-        {
-            ShowPar.shower_state = STATE_OFF;
-        }
-        if((KeyCmd.rsp.dat[DAT_INFO]&0x40)== 0X40) //drain 打开
-        {
-            ShowPar.drain_state = STATE_ON;
-        }
-        else
-        {
-            ShowPar.drain_state = STATE_OFF;
-        }
-        KeyCmd.req.dat[DAT_INFO] = KeyCmd.rsp.dat[DAT_INFO];
-        show_tempture( ShowPar.temp_val);
     }
-    */
-    // 主机与从机温度不一致，从机需更新温度
+    if(KeyCmd.rsp.dat[DAT_STATE]!=KeyCmd.req.dat[DAT_STATE]) //出水状态更新
+    {
+        KeyCmd.req.dat[DAT_STATE] =KeyCmd.rsp.dat[DAT_STATE];
+        show_tempture(ShowPar.temp_val);
+        switch ( KeyCmd.rsp.dat[DAT_STATE]&0x03)
+        {
+            case 0 :
+                {
+                    ShowPar.tap_state = OFF;
+                    ShowPar.shower_state =OFF;
+                    LED_TAP_OFF;
+                    LED_SHOWER_OFF;
+                }
+                break;
+            case 1 :
+                {
+                    ShowPar.tap_state = ON;
+                    ShowPar.shower_state =OFF;
+                    LED_TAP_ON;
+                    LED_SHOWER_OFF;
+                }
+                break;
+            case 2 :
+                {
+                    ShowPar.tap_state = OFF;
+                    ShowPar.shower_state =ON;
+                    LED_TAP_OFF;
+                    LED_SHOWER_ON;
+                }
+                break;
+        }
+
+    }
+    if(KeyCmd.rsp.dat[DAT_LIGHT]!=KeyCmd.req.dat[DAT_LIGHT]) //lamp状态更新
+    {
+        KeyCmd.req.dat[DAT_LIGHT] =KeyCmd.rsp.dat[DAT_LIGHT];
+       if(KeyCmd.rsp.dat[DAT_LIGHT] == 0) //关灯
+       {
+            ShowPar.lamp_state = OFF;
+            LED_LAMP_OFF;
+       }
+       else
+       {
+           ShowPar.lamp_state = ON;
+           LED_LAMP_ON;
+           ShowPar.lamp_gear =KeyCmd.rsp.dat[DAT_LIGHT];
+       }
+    }
+    if(KeyCmd.rsp.dat[DAT_DRAIN]!=KeyCmd.req.dat[DAT_DRAIN]) //drain状态更新
+    {
+         KeyCmd.req.dat[DAT_DRAIN] =KeyCmd.rsp.dat[DAT_DRAIN];
+        if(KeyCmd.rsp.dat[DAT_LIGHT] == 0) //关灯
+        {
+             ShowPar.drain_state = OFF;
+             LED_DRAIN_OFF;
+        }
+        else
+        {
+            ShowPar.drain_state = ON;
+            LED_DRAIN_ON;
+        }
+    }
+    if(KeyCmd.rsp.dat[DAT_LOCK]!=KeyCmd.req.dat[DAT_LOCK]) //童锁状态更新
+    {
+        KeyCmd.req.dat[DAT_LOCK] =KeyCmd.rsp.dat[DAT_LOCK];
+        if(KeyCmd.rsp.dat[DAT_LOCK] == 1)                // lock
+        {
+            show_lock();
+            work_state =WORK_STATE_LOCK;
+        }
+        else
+        {
+            show_tempture(ShowPar.temp_val);
+        }
+    }
     if((KeyCmd.rsp.dat[DAT_TEMP_H]!=KeyCmd.req.dat[DAT_TEMP_H])
-        ||(KeyCmd.rsp.dat[DAT_TEMP_L]!=KeyCmd.req.dat[DAT_TEMP_L]))
+        ||(KeyCmd.rsp.dat[DAT_TEMP_L]!=KeyCmd.req.dat[DAT_TEMP_L]))   //温度更新
     {
         uint16 tem = 0;
         tem = (KeyCmd.rsp.dat[DAT_TEMP_H]<<8)+ KeyCmd.rsp.dat[DAT_TEMP_L];
@@ -1292,15 +1364,13 @@ void Serial_Processing (void)
     memcpy(&KeyCmd.rsp,Recv_Buf,sizeof(KeyCmd.rsp));
     if(work_state != WORK_STATE_LOCK)
     {
-        if((Send_Buf[DAT_TEMP_H+3] == KeyCmd.req.dat[DAT_TEMP_H])
-            && (Send_Buf[DAT_TEMP_L+3] == KeyCmd.req.dat[DAT_TEMP_L]))  //当前没有按键按下
+        if(0 == KeyCmd.req.dat[DAT_FUN_CMD])  //判断功能码 按键板是否在使用
         {
-           key_state();
+           key_state_update();
         }
     }
     KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
     send_dat(&KeyCmd.req, BUF_SIZE);
-    memcpy(Send_Buf,&KeyCmd.req,sizeof(KeyCmd.req));
     KeyCmd.req.dat[DAT_FUN_CMD]=0;          //清功能码
     memset(&KeyCmd.rsp,0,sizeof(KeyCmd.rsp));
 }
@@ -1328,32 +1398,32 @@ void receiveHandler(uint8 ui8Data)
         Recv_Len++;
         if(Recv_Len >= BUF_SIZE) //接收到32byte的数据
         {
-            if((Recv_Buf[31]== 0x04)&&(Recv_Buf[30]== 0x0B)&&(Recv_Buf[2] == 0x01)&&(Recv_Buf[1] == 0x3A))
-            {
-                for(uint8 i=2;i<crc_len;i++)
-                {
-                    check_sum^=Recv_Buf[i];
-                }
-                if(check_sum == Recv_Buf[29])
-                //if(CRC8_SUM(&Recv_Buf[2], crc_len) == Recv_Buf[29])
-                {
-                    Recv_Len = 0;
-                    frame_ok_fag=1;
-                }
-                else
-                {
+             if((Recv_Buf[31]== 0x04)&&(Recv_Buf[30]== 0x0B)&&(Recv_Buf[2] == 0x01)&&(Recv_Buf[1] == 0x3A))
+             {
+                 for(uint8 i=2;i<crc_len;i++)
+                 {
+                     check_sum^=Recv_Buf[i];
+                 }
+                 if(check_sum == Recv_Buf[29])
+                 //if(CRC8_SUM(&Recv_Buf[2], crc_len) == Recv_Buf[29])
+                 {
                      Recv_Len = 0;
-                     frame_ok_fag=0;
-                }
-            }
-           if((Recv_Buf[31]!= 0x04)||(Recv_Buf[30]!= 0x0B)||(Recv_Buf[2] != 0x01)||(Recv_Buf[1] != 0x3A))  //结束码或者地址不对
-            {
-                 Recv_Len = 0;
-                 frame_ok_fag = 0;
-            }
+                     frame_ok_fag=1;
+                 }
+                 else
+                 {
+                      Recv_Len = 0;
+                      frame_ok_fag=0;
+                 }
+             }
+            if((Recv_Buf[31]!= 0x04)||(Recv_Buf[30]!= 0x0B)||(Recv_Buf[2] != 0x01)||(Recv_Buf[1] != 0x3A))  //结束码或者地址不对
+             {
+                  Recv_Len = 0;
+                  frame_ok_fag = 0;
+             }
+
         }
     }
-
 }
 /*****************************************************************************
  函 数 名  : set_temp_val_dec
@@ -1460,7 +1530,6 @@ void BSP_init(void)
     KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
     KeyCmd.req.end_num1 = 0x0F;
     KeyCmd.req.end_num2 = 0x04;
-    memcpy(Send_Buf,&KeyCmd.req,sizeof(KeyCmd.req));
     show_tempture( ShowPar.temp_val);
     work_state = WORK_STATE_IDLE;
 }
