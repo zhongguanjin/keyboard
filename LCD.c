@@ -47,10 +47,10 @@ void led_scan(void)
 {
     static uint8 digiPos = 0;
     static uint8 time_count = 0;
-    LED_COM1_L;
-    LED_COM2_L;
-    LED_COM3_L;
-    LED_SEIO_OUT_L;
+    //LED_COM1_L;
+    //LED_COM2_L;
+    //LED_COM3_L;
+    //LED_SEIO_OUT_L;
     if(digi_flg == 1) //清除小数点
     {
        LED_SEG_DAT =tab_val[digiBuf[digiPos]];
@@ -59,11 +59,14 @@ void led_scan(void)
     {
         LED_SEG_DAT =tab_num[digiBuf[digiPos]];
     }
-    switch(digiPos)
+    if(Flg.lcd_sleep_flg == 0)
     {
-        case 0: LED_COM1_L;LED_COM2_H;LED_COM3_H; break; // 选择第一列数码管
-        case 1: LED_COM1_H;LED_COM2_L;LED_COM3_H; break; // 选择第二列数码管
-        case 2: LED_COM1_H;LED_COM2_H;LED_COM3_L; break; // 选择第三列数码管
+        switch(digiPos)
+        {
+            case 0: LED_COM1_L;LED_COM2_H;LED_COM3_H; break; // 选择第一列数码管
+            case 1: LED_COM1_H;LED_COM2_L;LED_COM3_H; break; // 选择第二列数码管
+            case 2: LED_COM1_H;LED_COM2_H;LED_COM3_L; break; // 选择第三列数码管
+        }
     }
     digiPos++;
     if(digiPos == 3)
@@ -76,6 +79,7 @@ void led_scan(void)
 void show_tempture( uint16 data)//温度显示
 {
     digi_flg = 0;
+    Flg.lcd_sleep_flg = 0;
     digiBuf[0] = data/100;
     digiBuf[1] = (data%100)/10;
     digiBuf[2] = data%10;
@@ -84,6 +88,7 @@ void show_tempture( uint16 data)//温度显示
 void show_lock ()//童锁显示
 {
     digi_flg = 1;
+    Flg.lcd_sleep_flg = 0;
     digiBuf[0] = 0;
     digiBuf[1] = 0;
     digiBuf[2] = 13;
@@ -92,6 +97,10 @@ void show_lock ()//童锁显示
 void show_sleep ( )  //lcd 关闭
 {
     digi_flg = 1;
+    Flg.lcd_sleep_flg = 1;
+    LED_COM1_H;
+    LED_COM2_H;
+    LED_COM3_H;
     digiBuf[0] = 13;
     digiBuf[1] = 13;
     digiBuf[2] = 13;
@@ -100,6 +109,7 @@ void show_sleep ( )  //lcd 关闭
 void show_clean() //清洁显示
 {
     digi_flg = 1;
+    Flg.lcd_sleep_flg = 0;
     digiBuf[0] = 10;
     digiBuf[1] = 10;
     digiBuf[2] = 10;
@@ -108,6 +118,7 @@ void show_clean() //清洁显示
 void show_adj_key(uint8 id,uint8 dat) //档位调节显示
 {
     digi_flg = 1;
+    Flg.lcd_sleep_flg = 0;
     switch ( id )
     {
         case LAMP_VALVE:
@@ -140,8 +151,9 @@ void show_adj_key(uint8 id,uint8 dat) //档位调节显示
 
 void write_err_num(uint8 dat) //故障码显示
 {
-    digi_flg = 1;
-      switch ( dat )
+     digi_flg = 1;
+     Flg.lcd_sleep_flg = 0;
+      switch (dat)
       {
           case ERR_F1:
               {
@@ -179,6 +191,7 @@ void write_err_num(uint8 dat) //故障码显示
 void show_state(uint8 state) //状态显示
 {
     digi_flg = 1;
+    Flg.lcd_sleep_flg = 0;
     if(state == STATE_ON)
     {
         digiBuf[0] = 0;//clear

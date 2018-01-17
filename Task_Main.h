@@ -43,9 +43,18 @@ typedef struct _TASK_COMPONENTS
 #define     crc_len    (BUF_SIZE-5)
 uint8       Recv_Buf[BUF_SIZE+8];
 
+uint8 Button_id = 0;   //按键id号
 
-uint8 frame_ok_fag;       //一帧数据正确标志
 
+typedef struct
+{
+    uint8 lcd_sleep_flg:1;      //lcd睡眠标志
+    uint8 temp_flash_flg:1;     //极限温度 连续闪烁3次，闪烁频率1次/0.5秒标志
+    uint8 frame_ok_fag:1;       //一帧数据正确标志
+    uint8 err_del_flg:1;
+}tFlag_t;
+
+tFlag_t   Flg;
 
 enum
 {
@@ -182,11 +191,8 @@ typedef struct
 }tShowParams_t;
 
 
-typedef struct
-{
-    uint8 id;              //按键id
-    uint8 lock_flg :1;
-}tButton_t;
+
+
 
 //串口协议结构体
 typedef struct
@@ -215,7 +221,7 @@ typedef struct
  tKeyCmd_t  KeyCmd;
  uint8 Recv_Len = 0;	// 接收长度
  tShowParams_t  ShowPar ;
- tButton_t   Button;
+
 
 extern void BSP_init(void);
 extern void key_progress(void);
