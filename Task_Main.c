@@ -1261,7 +1261,7 @@ uint8 CRC8_SUM(void *p,uint8 len)
 void key_state_update(void)
 {
     /* BEGIN: Added by zgj, 2018/1/15 */
-    if(KeyCmd.rsp.dat[DAT_MASSAGE]!=KeyCmd.req.dat[DAT_MASSAGE]) //按摩状态更新
+    if((KeyCmd.rsp.dat[DAT_MASSAGE]&0x03)!=((ShowPar.val&0x60)>>5)) //按摩状态更新
     {
         ShowPar.air_gear = (KeyCmd.rsp.dat[DAT_MASSAGE]&0xE0)>>5;
         ShowPar.water_gear = (KeyCmd.rsp.dat[DAT_MASSAGE]&0x1C)>>2;
@@ -1303,7 +1303,7 @@ void key_state_update(void)
                 break;
         }
     }
-    if(KeyCmd.rsp.dat[DAT_STATE]!=KeyCmd.req.dat[DAT_STATE]) //出水状态更新
+    if((KeyCmd.rsp.dat[DAT_STATE]&0x03)!=(ShowPar.val&0x03)) //出水状态更新
     {
         KeyCmd.req.dat[DAT_STATE] =KeyCmd.rsp.dat[DAT_STATE];
         time_cnt_del(TAP_VALVE);
@@ -1345,18 +1345,18 @@ void key_state_update(void)
        {
             ShowPar.lamp_state = OFF;
             LED_LAMP_OFF;
-            del(LAMP_VALVE);
+            //del(LAMP_VALVE);
        }
        else
        {
            ShowPar.lamp_state = ON;
            LED_LAMP_ON;
            ShowPar.lamp_gear =KeyCmd.rsp.dat[DAT_LIGHT];
-           add(LAMP_VALVE);
-           key_adjust(key_arry[top],ShowPar.lamp_gear);
+           //add(LAMP_VALVE);
+           //key_adjust(key_arry[top],ShowPar.lamp_gear);
        }
     }
-    if(KeyCmd.rsp.dat[DAT_DRAIN]!=KeyCmd.req.dat[DAT_DRAIN]) //drain状态更新
+    if((KeyCmd.rsp.dat[DAT_DRAIN]&0x01)!=ShowPar.drain_state) //drain状态更新
     {
          KeyCmd.req.dat[DAT_DRAIN] =KeyCmd.rsp.dat[DAT_DRAIN];
         if(KeyCmd.rsp.dat[DAT_DRAIN] == 0)
@@ -1441,7 +1441,6 @@ void Serial_Processing (void)
             {
                 work_state = WORK_STATE_ERR;
             }
-            KeyCmd.req.dat[DAT_ERR_NUM] =KeyCmd.rsp.dat[DAT_ERR_NUM];
         }
         else
         {
@@ -1457,6 +1456,7 @@ void Serial_Processing (void)
             }
         }
     }
+    KeyCmd.req.dat[DAT_ERR_NUM] =KeyCmd.rsp.dat[DAT_ERR_NUM];      //错误码
     KeyCmd.req.dat[DAT_LIQUID] = KeyCmd.rsp.dat[DAT_LIQUID];       //液位信息
     KeyCmd.req.dat[DAT_TEM_OUT] = KeyCmd.rsp.dat[DAT_TEM_OUT];     //实际温度
     KeyCmd.req.dat[DAT_KEEP_WARM] = KeyCmd.rsp.dat[DAT_KEEP_WARM];     //保温状态
