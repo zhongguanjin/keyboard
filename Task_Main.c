@@ -1261,12 +1261,12 @@ uint8 CRC8_SUM(void *p,uint8 len)
 void key_state_update(void)
 {
     /* BEGIN: Added by zgj, 2018/1/15 */
-    if((KeyCmd.rsp.dat[DAT_MASSAGE]&0x03)!=((ShowPar.val&0x60)>>5)) //按摩状态更新
+    if(KeyCmd.rsp.dat[DAT_MASSAGE]!=KeyCmd.req.dat[DAT_MASSAGE]) //按摩状态更新
     {
         ShowPar.air_gear = (KeyCmd.rsp.dat[DAT_MASSAGE]&0xE0)>>5;
         ShowPar.water_gear = (KeyCmd.rsp.dat[DAT_MASSAGE]&0x1C)>>2;
         KeyCmd.req.dat[DAT_MASSAGE] =KeyCmd.rsp.dat[DAT_MASSAGE];
-        switch ( KeyCmd.rsp.dat[DAT_MASSAGE]&0x03)
+        switch ( KeyCmd.req.dat[DAT_MASSAGE]&0x03)
         {
             case 0:
                 {
@@ -1303,12 +1303,13 @@ void key_state_update(void)
                 break;
         }
     }
-    if((KeyCmd.rsp.dat[DAT_STATE]&0x03)!=(ShowPar.val&0x03)) //出水状态更新
+    if((KeyCmd.rsp.dat[DAT_STATE]!=KeyCmd.req.dat[DAT_STATE])
+        ||(KeyCmd.rsp.dat[DAT_STATE]!=(ShowPar.val&0x03))) //出水状态更新
     {
         KeyCmd.req.dat[DAT_STATE] =KeyCmd.rsp.dat[DAT_STATE];
         time_cnt_del(TAP_VALVE);
         show_tempture(ShowPar.temp_val);
-        switch ( KeyCmd.rsp.dat[DAT_STATE]&0x03)
+        switch ( KeyCmd.req.dat[DAT_STATE]&0x03)
         {
             case 0 :
                 {
@@ -1341,7 +1342,7 @@ void key_state_update(void)
     {
         KeyCmd.req.dat[DAT_LIGHT] =KeyCmd.rsp.dat[DAT_LIGHT];
         time_cnt_del(LAMP_VALVE);
-       if(KeyCmd.rsp.dat[DAT_LIGHT] == 0)
+       if(KeyCmd.req.dat[DAT_LIGHT] == 0)
        {
             ShowPar.lamp_state = OFF;
             LED_LAMP_OFF;
@@ -1356,10 +1357,10 @@ void key_state_update(void)
            //key_adjust(key_arry[top],ShowPar.lamp_gear);
        }
     }
-    if((KeyCmd.rsp.dat[DAT_DRAIN]&0x01)!=ShowPar.drain_state) //drain状态更新
+    if(KeyCmd.rsp.dat[DAT_DRAIN]!=KeyCmd.req.dat[DAT_DRAIN]) //drain状态更新
     {
          KeyCmd.req.dat[DAT_DRAIN] =KeyCmd.rsp.dat[DAT_DRAIN];
-        if(KeyCmd.rsp.dat[DAT_DRAIN] == 0)
+        if(KeyCmd.req.dat[DAT_DRAIN] == 0)
         {
              ShowPar.drain_state = OFF;
              LED_DRAIN_OFF;
@@ -1373,7 +1374,7 @@ void key_state_update(void)
     if(KeyCmd.rsp.dat[DAT_LOCK]!=KeyCmd.req.dat[DAT_LOCK]) //童锁状态更新
     {
         KeyCmd.req.dat[DAT_LOCK] =KeyCmd.rsp.dat[DAT_LOCK];
-        if(KeyCmd.rsp.dat[DAT_LOCK] == 1)                // lock
+        if(KeyCmd.req.dat[DAT_LOCK] == 1)                // lock
         {
             show_lock();
             work_state =WORK_STATE_LOCK;
