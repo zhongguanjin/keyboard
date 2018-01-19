@@ -629,7 +629,8 @@ void INC_EventHandler(void)
                         }
                         key_adjust(key_arry[top],ShowPar.water_gear);
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:05
-                        KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5); //数据码
+                        KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                                +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5); //数据码
                         dbg("massage %x\r\n",KeyCmd.req.dat[DAT_MASSAGE]);
                     }
                     break;
@@ -646,7 +647,8 @@ void INC_EventHandler(void)
                         }
                         key_adjust(key_arry[top],ShowPar.air_gear);
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:07
-                        KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5); //数据码
+                        KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                                +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5); //数据码
                         dbg("massage %x\r\n",KeyCmd.req.dat[DAT_MASSAGE]);
                     }
                     break;
@@ -752,7 +754,8 @@ void DEC_EventHandler(void)
                         }
                         key_adjust(key_arry[top],ShowPar.water_gear);
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:07
-                        KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
+                        KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                                +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                         dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
                     }
                     break;
@@ -769,7 +772,8 @@ void DEC_EventHandler(void)
                         }
                         key_adjust(key_arry[top],ShowPar.air_gear);
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:07
-                        KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
+                        KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                                +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                         dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
                     }
                     break;
@@ -810,7 +814,8 @@ void AIR_EventHandler(void)
             {
                 LED_AIR_ON;
                 add(AIR_VALVE);
-                KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
+                KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                        +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                 //ShowPar.air_gear= MASSAGE_GEAR_ON3;
                 key_adjust(key_arry[top],ShowPar.air_gear);
             }
@@ -818,7 +823,8 @@ void AIR_EventHandler(void)
             {
                LED_AIR_OFF;
                del(AIR_VALVE);
-               KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
+               KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                        +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                //ShowPar.air_gear= MASSAGE_GEAR_OFF;
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
