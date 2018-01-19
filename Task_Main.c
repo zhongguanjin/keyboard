@@ -146,6 +146,7 @@ void TaskKeyScan(void)  //20ms
 void TaskKeyPrs(void)  //10MS
 {
     uint8 id = 0;
+    static uint16 count =0;
     id =  Button_id &0Xff;
     switch ( id )
     {
@@ -196,16 +197,17 @@ void TaskKeyPrs(void)  //10MS
 		}
         case LOCK_VALVE:
         {
-            static uint16 count =0;
             if((count++)>=300)
             {
-                count = 0;
+                count =0;
                 LOCK_EventHandler();
             }
            break;
         }
         default:
         {
+            count =0;
+            Flg.lock_flg =0;
             break;
         }
     }
@@ -962,6 +964,7 @@ void LOCK_EventHandler(void) //10ms
 {
     if(work_state == WORK_STATE_IDLE)
     {
+        Flg.lock_flg =1;
         work_state = WORK_STATE_LOCK;
         ShowPar.shower_state = OFF;
         ShowPar.tap_state = OFF;
@@ -971,7 +974,7 @@ void LOCK_EventHandler(void) //10ms
         KeyCmd.req.dat[DAT_LOCK] = 0x01;
         dbg("idle -> lock,%x\r\n",KeyCmd.req.dat[DAT_VALVE]);
     }
-    else if(work_state == WORK_STATE_LOCK)
+    if((work_state == WORK_STATE_LOCK)&&(Flg.lock_flg ==0))
     {
        show_tempture( ShowPar.temp_val);
        work_state = WORK_STATE_IDLE;
