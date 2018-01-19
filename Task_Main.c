@@ -548,6 +548,7 @@ void TaskKeyScan(void)  //20ms
 void TaskKeyPrs(void)  //10MS
 {
     uint8 id = 0;
+    static uint16 count =0;
     id =  Button_id &0Xff;
     switch ( id )
     {
@@ -598,7 +599,6 @@ void TaskKeyPrs(void)  //10MS
 		}
         case LOCK_VALVE:
         {
-            static uint16 count =0;
             if((count++)>=300)
             {
                 count = 0;
@@ -608,6 +608,7 @@ void TaskKeyPrs(void)  //10MS
         }
         default:
         {
+            count = 0;
             Flg.lock_flg =0;
             break;
         }
