@@ -33,6 +33,14 @@ uint8   LastKey=0x00;    //代表的是连续按下
 static uint8 key_arry[SIZE]; //按键堆栈数组
 static int top = 0;
 
+/* BEGIN: Added by zgj, 2018/1/19 */
+uint8 work_mode;        //test 步骤
+uint16 test_cnt;        //test 次数
+uint8 buf_cnt[2];       //
+
+/* END:   Added by zgj, 2018/1/19 */
+
+
 //函数申明
 uint8 CRC8_SUM(void * p, uint8 len);
 void TaskShow(void);
@@ -55,6 +63,9 @@ void key_adjust(uint8 id,uint8 dat);
 void time_cnt_del( uint8 id);
 void CLEAN_EventHandler(void);
 void show_temp_flash(void);
+void TaskKeyTest(void); //100ms
+void EepromWriteByte(uint8 addr,uint8 data);
+uint8 EepromReadByte(uint8 addr);
 
 
 // 定义结构体变量
@@ -97,9 +108,400 @@ void TaskShow(void)
 {
     show_work();
     show_temp_flash();
-    if(key_switch_fag ==0)
+    if((key_switch_fag ==0)&&(work_state != WORK_STATE_TEST))
     {
         show_temp_actul();
+    }
+    if(work_state == WORK_STATE_TEST)
+    {
+        TaskKeyTest();
+    }      //按键测试程序
+}
+/*****************************************************************************
+ 函 数 名  : EepromWriteByte
+ 功能描述  : 写内存函数
+ 输入参数  : uint8 addr
+             uint8 data
+ 输出参数  :
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
+
+ 修改历史      :
+  1.日    期   : 2017年5月23日 星期二
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
+void EepromWriteByte(uint8 addr,uint8 data)
+{
+    do
+    {
+        ;
+    }while(WR);
+
+    EEADRL = addr;
+    EEDATL = data;
+
+    WREN = 1;
+
+    EECON2 = 0x55;
+    EECON2 = 0xAA;
+
+    WR = 1;
+
+    while(WR);
+
+    if(EEIF == 1)
+    {
+        EEIF = 0;
+    }
+    WREN = 0;
+}
+/*****************************************************************************
+ 函 数 名  : EepromReadByte
+ 功能描述  : 读内存函数
+ 输入参数  : uint8 addr
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
+
+ 修改历史      :
+  1.日    期   : 2017年5月23日 星期二
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
+uint8 EepromReadByte(uint8 addr)
+{
+	do{
+		;
+	}while(RD);
+
+	EEADRL = addr;
+
+	EEPGD = 0;
+	CFGS = 0;
+
+	RD = 1;
+
+	while(RD);
+
+	return EEDATL;
+
+}
+
+/*****************************************************************************
+ 函 数 名  : TaskKeyTest
+ 功能描述  : 寿命测试程序函数
+ 输入参数  : void
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
+
+ 修改历史      :
+  1.日    期   : 2017年12月11日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
+/*
+1，开启下水器，8秒后开启花洒进水
+2，2秒后将目标温度设定为15℃
+3，15秒后将目标温度设定为43℃
+4，2秒后切换为浴缸进水（下水器要默认关闭）
+5，当低液位传感器感应到水位后（浴缸进水默认关闭，循环加热默认开启），2秒后启动气按摩，1s后开启浴缸进水
+6,当高液位传感器感应到水位后（浴缸进水默认关闭）3秒后发送开启浴缸进水命令、再3S后发送花洒进水命令
+7，6S后关闭气按摩，启动水按摩。
+8，2秒后水按摩、气按摩同时开启。
+9，6S后关闭水按摩、气按摩，
+10，1s后水底灯开启（默认5秒循环变色），30秒后发射定色命令，
+11，10s以2秒/次的速度连续发射7次加大命令，
+12，5秒后以2秒/次的速度连续发射7次减小命令
+13，2秒后关闭水底灯，
+14，2s后开启下水器
+15,（低液位无水时默认关闭循环加热），此时发送水按摩命令、气按摩命令。
+*/
+void TaskKeyTest(void) //100ms
+{
+    switch ( work_mode)
+    {
+        case STATE_1:
+            {
+                static uint8 time1 =0;
+                if((time1++) == 20)// 2s
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
+                }
+                if(time1==80)//8s时间到
+                {
+                    time1 = 0;
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
+                    KeyCmd.req.dat[DAT_VALVE] = 0x02;
+                    ShowPar.shower_state =ON;
+                    work_mode = STATE_2;
+                }
+                break;
+            }
+        case STATE_2:
+            {
+
+                static uint8 time2=0;
+                if((time2++)==20)// 2s时间到
+                {
+                    time2 = 0;
+                    ShowPar.temp_val =150;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_INFLOW; // 温度变化
+                    KeyCmd.req.dat[DAT_VALVE]=ShowPar.val&0x03;
+                    KeyCmd.req.dat[DAT_TEMP_H] = (uint8)(ShowPar.temp_val >> 8);            // 温度高
+                    KeyCmd.req.dat[DAT_TEMP_L] = (uint8)ShowPar.temp_val;                 // 温度低
+                    show_tempture(ShowPar.temp_val);
+                    work_mode = STATE_3;
+                }
+                break;
+            }
+        case STATE_3:
+            {
+                static uint8 time3=0;
+                if((time3++)==150)// 15s时间到
+                {
+                    time3 = 0;
+                    ShowPar.temp_val =430;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_INFLOW; //温度变化
+                    KeyCmd.req.dat[DAT_VALVE]=ShowPar.val&0x03;
+                    KeyCmd.req.dat[DAT_TEMP_H] = (uint8)(ShowPar.temp_val >> 8);            // 温度高
+                    KeyCmd.req.dat[DAT_TEMP_L] = (uint8)ShowPar.temp_val;
+                    show_tempture(ShowPar.temp_val);
+                    work_mode = STATE_4;
+                }
+                break;
+            }
+        case STATE_4:
+            {
+                static uint8 time4=0;
+                if((time4++)==30)// 3s时间到
+                {
+                    time4 = 0;
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;  // 功能码：进水开关改变
+                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
+                    work_mode = STATE_5;
+                }
+                break;
+            }
+        case STATE_5:
+            {
+                 static uint8 time5=0;
+                // if(1)
+                 if((KeyCmd.req.dat[DAT_LIQUID]&0x01) == 0x01)
+                 {
+                     show_tempture(test_cnt);
+                     if((time5++) == 50)// 5s时间到
+                     {
+                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
+                        KeyCmd.req.dat[DAT_VALVE] =0X02; //气按摩
+                     }
+                     if((time5) == 80)// 8s时间到
+                     {
+                          time5 = 0;
+                          KeyCmd.req.dat[DAT_FUN_CMD] =FUN_INFLOW;//进水通道切换
+                          KeyCmd.req.dat[DAT_VALVE] =0x01;  //龙头
+                          work_mode = STATE_6;
+                     }
+                 }
+                break;
+            }
+        case STATE_6:
+            {
+                static uint8 time6 = 0;
+                //if(1)
+                if((KeyCmd.req.dat[DAT_LIQUID]&0x02) == 0x02)  // 判断高液位
+                {
+                    if((time6++) == 30) // 3s时间到
+                    {
+                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_INFLOW; //进水通道切换
+                        KeyCmd.req.dat[DAT_VALVE] =0x01;
+                    }
+                    if(time6 == 60) // 3s
+                    {
+                        time6 = 0;
+                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_INFLOW; //进水通道切换
+                        KeyCmd.req.dat[DAT_VALVE] =0x02;
+                        work_mode = STATE_7;
+                    }
+                }
+                break;
+            }
+        case STATE_7:
+            {
+                static uint8 time7=0;
+                if((time7++)==60)// 6s时间到
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
+                    KeyCmd.req.dat[DAT_VALVE] =0X00; //关闭气按摩
+
+                }
+                if(time7 == 90)
+                {
+                  time7 = 0;
+                  KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
+                  KeyCmd.req.dat[DAT_VALVE] =0X01; //开水按摩
+                  work_mode = STATE_8;
+                }
+                break;
+            }
+        case STATE_8:
+            {
+                static uint8 time8=0;
+                if((time8++)==50)// 5s时间到
+                {
+                    time8 = 0;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
+                    KeyCmd.req.dat[DAT_VALVE] =0X03; //水和气按摩
+                    work_mode = STATE_9;
+
+                }
+                break;
+            }
+        case STATE_9:
+            {
+                static uint8 time9=0;
+                if((time9++)==60)// 6s时间到
+                {
+                    time9 = 0;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
+                    KeyCmd.req.dat[DAT_VALVE] =0X00; //水和气按摩
+                    work_mode = STATE_10;
+                }
+                break;
+            }
+        case STATE_10:
+            {
+                static uint16 time10=0;
+                if((time10++)==30)// 1s时间到
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT; //灯光功能
+                    KeyCmd.req.dat[DAT_VALVE] =0x08; //循环变色
+                }
+                if(time10==300) //30s
+                {
+                    time10 = 0;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT; //灯光功能
+                    KeyCmd.req.dat[DAT_VALVE] =0x09; //循环变色
+                    work_mode = STATE_11;
+                 }
+                break;
+            }
+        case STATE_11:
+            {
+                static uint8 time11=0;
+                if((time11++)>=80)// 8s时间到
+                {
+                    static uint8 color=1;
+                    static uint8 time11_1 = 1;
+                    if(((time11_1++)%21)==0)
+                    {
+                        time11_1=1;
+                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT; //灯光功能
+                        KeyCmd.req.dat[DAT_VALVE] = color; //循环变色
+                        color++;
+                    }
+                    if(color >7)
+                    {
+                        time11 = 0;
+                        color=1;
+                        work_mode = STATE_12;
+                    }
+                }
+                break;
+            }
+
+        case STATE_12:
+            {
+                static uint8 time12=0;
+                if((time12++)>=80)// 8s时间到
+                {
+                    static uint8 color=6;
+                    static uint8 time12_1 =1;
+                    if(((time12_1++)%21)==0)
+                    {
+                        time12_1 =1;
+                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT; //灯光功能
+                        KeyCmd.req.dat[DAT_VALVE] = color; //循环变色
+                        color--;
+                    }
+                    if(color <1)
+                    {
+                        time12=0;
+                        color=6;
+                        work_mode = STATE_13;
+                    }
+
+                }
+
+                break;
+            }
+        case STATE_13:
+            {
+                static uint8 time13=0;
+                if((time13++)==30)// 3s时间到
+                {
+                    time13 = 0;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT; //灯光功能
+                    KeyCmd.req.dat[DAT_VALVE] = 0; //off
+                    work_mode = STATE_14;
+                }
+                break;
+            }
+        case STATE_14:
+            {
+                static uint8 time14=0;
+                if((time14++)==30)// 3s时间到
+                {
+                    time14 = 0;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE; //排水功能
+                    KeyCmd.req.dat[DAT_VALVE] =0x01;
+                    work_mode = STATE_15;
+                }
+                break;
+            }
+        case STATE_15:
+            {
+                static uint8 time15=0;
+                //if(1)
+                if((KeyCmd.req.dat[DAT_LIQUID]&0x01) == 0)  // 判断低液位
+                {
+                    if((time15++)==30)  // 3s时间到
+                    {
+                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
+                        KeyCmd.req.dat[DAT_VALVE] =0X03; //水,气按摩
+                    }
+                    if(time15==60) // 6s
+                    {
+                        time15 = 0;
+                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
+                        KeyCmd.req.dat[DAT_VALVE] =0X00; //关闭
+                        if((test_cnt++)>999)
+                        {
+                          test_cnt = 0;
+                        }
+                        show_tempture(test_cnt);
+                        buf_cnt[0]= (test_cnt&0xFF00)>>8;       //高八位
+                        buf_cnt[1]= test_cnt&0x00FF;
+                        EepromWriteByte(eeprom_addr, buf_cnt[0]);
+                        EepromWriteByte(eeprom_addr+0x01, buf_cnt[1]);
+                        work_mode = STATE_1;
+                    }
+                }
+                break;
+            }
+            default :
+            {
+
+                break ;
+            }
     }
 }
 
@@ -206,6 +608,7 @@ void TaskKeyPrs(void)  //10MS
         }
         default:
         {
+            Flg.lock_flg =0;
             break;
         }
     }
@@ -816,7 +1219,6 @@ void AIR_EventHandler(void)
                 add(AIR_VALVE);
                 KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
                         +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
-                //ShowPar.air_gear= MASSAGE_GEAR_ON3;
                 key_adjust(key_arry[top],ShowPar.air_gear);
             }
             else
@@ -825,7 +1227,6 @@ void AIR_EventHandler(void)
                del(AIR_VALVE);
                KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
                         +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
-               //ShowPar.air_gear= MASSAGE_GEAR_OFF;
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
             dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
@@ -866,16 +1267,17 @@ void WATER_EventHandler(void)
             {
                 LED_WATER_ON;
                 add(WATER_VALVE);
-                KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
-                //ShowPar.water_gear= MASSAGE_GEAR_ON3;
+                KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                        +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                 key_adjust(key_arry[top],ShowPar.water_gear);
             }
             else
             {
                LED_WATER_OFF;
                del(WATER_VALVE);
-               KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
-               //ShowPar.water_gear= MASSAGE_GEAR_OFF;
+               KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                        +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
+
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
             dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
@@ -888,7 +1290,6 @@ void WATER_EventHandler(void)
 		work_state =WORK_STATE_IDLE;
 		KeyCmd.req.dat[DAT_FUN_CMD] = FUN_CLEAN; //功能码
 		KeyCmd.req.dat[DAT_VALVE] =0x00;
-		KeyCmd.req.dat[DAT_CLAEN] =0x00;
 	}
 
 }
@@ -909,6 +1310,7 @@ void WATER_EventHandler(void)
 *****************************************************************************/
 void LAMP_EventHandler(void)
 {
+    static uint16 time_test =0;
     if(work_state == WORK_STATE_IDLE)
     {
         if(KeyPressDown&LAMP_VALVE)
@@ -938,7 +1340,39 @@ void LAMP_EventHandler(void)
             }
             KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:06
             dbg("lamp %x\r\n", KeyCmd.req.dat[DAT_VALVE]);
-
+        }
+        else if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S
+        {
+            LED_TAP_OFF;
+            LED_SHOWER_OFF;
+            LED_DRAIN_OFF;
+            LED_INC_OFF;
+            LED_DEC_OFF;
+            LED_WATER_OFF;
+            LED_AIR_OFF;
+            LED_LAMP_OFF;
+            time_test = 0;
+            work_state = WORK_STATE_TEST;
+            work_mode = STATE_1;
+            test_cnt = ((EepromReadByte(eeprom_addr)&0x00ff)<<8)+(EepromReadByte(eeprom_addr+0x01)&0x00ff);
+            show_tempture( test_cnt);
+        }
+    }
+    else if(work_state == WORK_STATE_TEST)
+    {
+        if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S
+        {
+            LED_TAP_OFF;
+            LED_SHOWER_OFF;
+            LED_DRAIN_OFF;
+            LED_INC_OFF;
+            LED_DEC_OFF;
+            LED_WATER_OFF;
+            LED_AIR_OFF;
+            LED_LAMP_OFF;
+            time_test = 0;
+            show_tempture( ShowPar.temp_val);
+            work_state = WORK_STATE_IDLE;
         }
     }
 }
@@ -962,6 +1396,7 @@ void LOCK_EventHandler(void) //10ms
 {
     if(work_state == WORK_STATE_IDLE)
     {
+        Flg.lock_flg =1;
         work_state = WORK_STATE_LOCK;
         ShowPar.shower_state = OFF;
         ShowPar.tap_state = OFF;
@@ -971,7 +1406,7 @@ void LOCK_EventHandler(void) //10ms
         KeyCmd.req.dat[DAT_LOCK] = 0x01;
         dbg("idle -> lock,%x\r\n",KeyCmd.req.dat[DAT_VALVE]);
     }
-    else if(work_state == WORK_STATE_LOCK)
+    if((work_state == WORK_STATE_LOCK)&&(Flg.lock_flg ==0))
     {
        show_tempture( ShowPar.temp_val);
        work_state = WORK_STATE_IDLE;
@@ -1103,7 +1538,6 @@ void CLEAN_EventHandler(void)
 			show_clean();                           //清洁显示---
 			KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
 			KeyCmd.req.dat[DAT_CLAEN] = 0x01;
-            KeyCmd.req.dat[DAT_VALVE] = 0x01;
 		}
 	}
 }
@@ -1314,7 +1748,10 @@ void key_state_update(void)
     {
         KeyCmd.req.dat[DAT_STATE] =KeyCmd.rsp.dat[DAT_STATE];
         time_cnt_del(TAP_VALVE);
-        show_tempture(ShowPar.temp_val);
+        if(work_state ==WORK_STATE_IDLE)
+        {
+            show_tempture(ShowPar.temp_val);
+        }
         switch ( KeyCmd.req.dat[DAT_STATE]&0x03)
         {
             case 0 :
@@ -1400,13 +1837,10 @@ void key_state_update(void)
             KeyCmd.req.dat[DAT_TEMP_H]=KeyCmd.rsp.dat[DAT_TEMP_H];
             KeyCmd.req.dat[DAT_TEMP_L] =KeyCmd.rsp.dat[DAT_TEMP_L];
             ShowPar.temp_val= (KeyCmd.req.dat[DAT_TEMP_H]<<8)+ KeyCmd.req.dat[DAT_TEMP_L];
-            if(work_state == WORK_STATE_IDLE)
+            if((work_state == WORK_STATE_IDLE)&&(Flg.lcd_sleep_flg == 0))
             {
-                if(Flg.lcd_sleep_flg == 0) //开启状态才显示出来
-                {
-                    show_tempture( ShowPar.temp_val);
-                    Time_t.sleep = 0; //清零重新等一分钟
-                }
+                show_tempture( ShowPar.temp_val);
+                Time_t.sleep = 0; //清零重新等一分钟
             }
         }
     }

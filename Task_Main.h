@@ -45,9 +45,11 @@ uint8       Recv_Buf[BUF_SIZE+8];
 
 uint8 Button_id = 0;   //按键id号
 
+#define   eeprom_addr       0x02
 
 typedef struct
 {
+    uint8 lock_flg:1;
     uint8 lcd_sleep_flg:1;      //lcd睡眠标志
     uint8 temp_flash_flg:1;     //极限温度 连续闪烁3次，闪烁频率1次/0.5秒标志
     uint8 frame_ok_fag:1;       //一帧数据正确标志
@@ -62,6 +64,8 @@ enum
   WORK_STATE_LOCK,      //儿童锁
   WORK_STATE_ERR,
   WORK_STATE_CLEAN,
+  WORK_STATE_TEST,
+
   WORK_STATE_MAX
 };
 
@@ -190,8 +194,28 @@ typedef struct
     };
 }tShowParams_t;
 
-
-
+/* BEGIN: Added by zgj, 2018/1/19 */
+enum
+{
+    STATE_0 = 0,
+    STATE_1,
+    STATE_2,
+    STATE_3,
+    STATE_4,
+    STATE_5,
+    STATE_6,
+    STATE_7,
+    STATE_8,
+    STATE_9,
+    STATE_10,
+    STATE_11,      //11
+    STATE_12,
+    STATE_13,    //13
+    STATE_14,
+    STATE_15,      //15
+    STATE_MAX
+};
+/* END:   Added by zgj, 2018/1/19 */
 
 
 //串口协议结构体
