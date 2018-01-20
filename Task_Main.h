@@ -54,6 +54,7 @@ typedef struct
     uint8 temp_flash_flg:1;     //极限温度 连续闪烁3次，闪烁频率1次/0.5秒标志
     uint8 frame_ok_fag:1;       //一帧数据正确标志
     uint8 err_del_flg:1;
+    uint8 temp_disreach_flg:1;        //水温保护 0-慢闪，1-快闪
 }tFlag_t;
 
 tFlag_t   Flg;
