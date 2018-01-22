@@ -108,7 +108,7 @@ void TaskShow(void)
 {
     show_work();
     show_temp_flash();
-    if((key_switch_fag ==0)&&(work_state != WORK_STATE_TEST))
+    if(key_switch_fag ==0)
     {
         show_temp_actul();
     }
@@ -818,12 +818,12 @@ void  TAP_EventHandler(void)
         if(KeyPressDown&TAP_VALVE) //第一次按下
          {
             KeyPressDown = 0;
+            time_cnt_del(TAP_VALVE);
             if(Flg.lcd_sleep_flg == 1)
             {
                 show_tempture( ShowPar.temp_val);
                 return;
             }
-            time_cnt_del(TAP_VALVE);
             ShowPar.tap_state ^= 0x01;
             if(ShowPar.tap_state == STATE_ON)
             {
@@ -1545,7 +1545,7 @@ void CLEAN_EventHandler(void)
 			work_state = WORK_STATE_CLEAN;
 			show_clean();                           //清洁显示---
 			KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
-			KeyCmd.req.dat[DAT_CLAEN] = 0x01;
+			KeyCmd.req.dat[DAT_VALVE] = 0x01;
 			dbg("clean start\r\n");
 		}
 	}
@@ -1783,10 +1783,7 @@ void key_state_update(void)
     {
         KeyCmd.req.dat[DAT_STATE] =KeyCmd.rsp.dat[DAT_STATE];
         time_cnt_del(TAP_VALVE);
-        if(work_state ==WORK_STATE_IDLE)
-        {
-            show_tempture(ShowPar.temp_val);
-        }
+        show_tempture(ShowPar.temp_val);
         switch ( KeyCmd.req.dat[DAT_STATE]&0x03)
         {
             case 0 :
