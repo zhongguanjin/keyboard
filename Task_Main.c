@@ -37,7 +37,7 @@ static int top = 0;
 uint8 work_mode;        //test 步骤
 uint16 test_cnt;        //test 次数
 uint8 buf_cnt[2];       //
-
+static uint16 time_test =0;
 /* END:   Added by zgj, 2018/1/19 */
 
 
@@ -218,8 +218,8 @@ uint8 EepromReadByte(uint8 addr)
 8，2秒后水按摩、气按摩同时开启。
 9，6S后关闭水按摩、气按摩，
 10，1s后水底灯开启（默认5秒循环变色），30秒后发射定色命令，
-11，10s以2秒/次的速度连续发射7次加大命令，
-12，5秒后以2秒/次的速度连续发射7次减小命令
+11，30s以2秒/次的速度连续发射7次加大命令，
+12，8秒后以2秒/次的速度连续发射7次减小命令
 13，2秒后关闭水底灯，
 14，2s后开启下水器
 15,（低液位无水时默认关闭循环加热），此时发送水按摩命令、气按摩命令。
@@ -254,8 +254,8 @@ void TaskKeyTest(void) //100ms
                 {
                     time2 = 0;
                     ShowPar.temp_val =150;
-                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_INFLOW; // 温度变化
-                    KeyCmd.req.dat[DAT_VALVE]=ShowPar.val&0x03;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_TEMP; // 温度变化
+                    KeyCmd.req.dat[DAT_VALVE]=0x00;
                     KeyCmd.req.dat[DAT_TEMP_H] = (uint8)(ShowPar.temp_val >> 8);            // 温度高
                     KeyCmd.req.dat[DAT_TEMP_L] = (uint8)ShowPar.temp_val;                 // 温度低
                     show_tempture(ShowPar.temp_val);
@@ -270,8 +270,8 @@ void TaskKeyTest(void) //100ms
                 {
                     time3 = 0;
                     ShowPar.temp_val =430;
-                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_INFLOW; //温度变化
-                    KeyCmd.req.dat[DAT_VALVE]=ShowPar.val&0x03;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_TEMP; //温度变化
+                    KeyCmd.req.dat[DAT_VALVE]=0x00;
                     KeyCmd.req.dat[DAT_TEMP_H] = (uint8)(ShowPar.temp_val >> 8);            // 温度高
                     KeyCmd.req.dat[DAT_TEMP_L] = (uint8)ShowPar.temp_val;
                     show_tempture(ShowPar.temp_val);
@@ -297,7 +297,7 @@ void TaskKeyTest(void) //100ms
                 // if(1)
                  if((KeyCmd.req.dat[DAT_LIQUID]&0x01) == 0x01)
                  {
-                     show_tempture(test_cnt);
+                     //show_tempture(test_cnt);
                      if((time5++) == 50)// 5s时间到
                      {
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
@@ -315,10 +315,11 @@ void TaskKeyTest(void) //100ms
             }
         case STATE_6:
             {
-                static uint8 time6 = 0;
+                //static uint8 time6 = 0;
                 //if(1)
                 if((KeyCmd.req.dat[DAT_LIQUID]&0x02) == 0x02)  // 判断高液位
                 {
+                /*
                     if((time6++) == 30) // 3s时间到
                     {
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_INFLOW; //进水通道切换
@@ -331,6 +332,8 @@ void TaskKeyTest(void) //100ms
                         KeyCmd.req.dat[DAT_VALVE] =0x02;
                         work_mode = STATE_7;
                     }
+                    */
+                    work_mode = STATE_7;
                 }
                 break;
             }
@@ -379,12 +382,14 @@ void TaskKeyTest(void) //100ms
             }
         case STATE_10:
             {
-                static uint16 time10=0;
-                if((time10++)==30)// 1s时间到
+                static uint8 time10=0;
+                if((time10++)==30)// 3s时间到
                 {
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT; //灯光功能
                     KeyCmd.req.dat[DAT_VALVE] =0x08; //循环变色
+                    work_mode = STATE_11;
                 }
+                /*
                 if(time10==300) //30s
                 {
                     time10 = 0;
@@ -392,12 +397,13 @@ void TaskKeyTest(void) //100ms
                     KeyCmd.req.dat[DAT_VALVE] =0x09; //循环变色
                     work_mode = STATE_11;
                  }
+                 */
                 break;
             }
         case STATE_11:
             {
-                static uint8 time11=0;
-                if((time11++)>=80)// 8s时间到
+                static uint16 time11=0;
+                if((time11++)>=300)// 8s时间到
                 {
                     static uint8 color=1;
                     static uint8 time11_1 = 1;
@@ -421,7 +427,7 @@ void TaskKeyTest(void) //100ms
         case STATE_12:
             {
                 static uint8 time12=0;
-                if((time12++)>=80)// 8s时间到
+                if((time12++)>=30)// 3s时间到
                 {
                     static uint8 color=6;
                     static uint8 time12_1 =1;
@@ -487,7 +493,7 @@ void TaskKeyTest(void) //100ms
                         {
                           test_cnt = 0;
                         }
-                        show_tempture(test_cnt);
+                        //show_tempture(test_cnt);
                         buf_cnt[0]= (test_cnt&0xFF00)>>8;       //高八位
                         buf_cnt[1]= test_cnt&0x00FF;
                         EepromWriteByte(eeprom_addr, buf_cnt[0]);
@@ -613,6 +619,7 @@ void TaskKeyPrs(void)  //10MS
         {
             count = 0;
             Flg.lock_flg =0;
+            time_test = 0;
             break;
         }
     }
@@ -1321,7 +1328,6 @@ void WATER_EventHandler(void)
 *****************************************************************************/
 void LAMP_EventHandler(void)
 {
-    static uint16 time_test =0;
     if(work_state == WORK_STATE_IDLE)
     {
         if(KeyPressDown&LAMP_VALVE)
@@ -1354,14 +1360,6 @@ void LAMP_EventHandler(void)
         }
         else if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S
         {
-            LED_TAP_OFF;
-            LED_SHOWER_OFF;
-            LED_DRAIN_OFF;
-            LED_INC_OFF;
-            LED_DEC_OFF;
-            LED_WATER_OFF;
-            LED_AIR_OFF;
-            LED_LAMP_OFF;
             time_test = 0;
             work_state = WORK_STATE_TEST;
             work_mode = STATE_1;
@@ -1371,16 +1369,14 @@ void LAMP_EventHandler(void)
     }
     else if(work_state == WORK_STATE_TEST)
     {
-        if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S
+        if(KeyPressDown&LAMP_VALVE)
         {
-            LED_TAP_OFF;
-            LED_SHOWER_OFF;
-            LED_DRAIN_OFF;
-            LED_INC_OFF;
-            LED_DEC_OFF;
-            LED_WATER_OFF;
-            LED_AIR_OFF;
-            LED_LAMP_OFF;
+            KeyPressDown = 0;
+            show_tempture( test_cnt);
+            ShowPar.switch_flg = STATE_ON;
+        }
+        else if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S
+        {
             time_test = 0;
             show_tempture( ShowPar.temp_val);
             work_state = WORK_STATE_IDLE;
@@ -2028,8 +2024,8 @@ void set_temp_val_dec(uint8 val)
     {
         Flg.temp_flash_flg = 0;
     }
-    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;                              // 功能码：水龙头出水温度改变
-    KeyCmd.req.dat[DAT_VALVE]=ShowPar.val&0x03;
+    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_TEMP;                              // 功能码：水龙头出水温度改变
+    KeyCmd.req.dat[DAT_VALVE]=0x00;
     KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
     KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
     show_tempture( ShowPar.temp_val);
@@ -2066,8 +2062,8 @@ void set_temp_val_inc(uint8 val)
     {
         Flg.temp_flash_flg = 0;
     }
-    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;        // 功能码：水龙头出水温度改变
-    KeyCmd.req.dat[DAT_VALVE]=ShowPar.val&0x03;
+    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_TEMP;        // 功能码：水龙头出水温度改变
+    KeyCmd.req.dat[DAT_VALVE]=0x00;
     KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
     KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
     show_tempture( ShowPar.temp_val);
