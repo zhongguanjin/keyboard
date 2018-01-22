@@ -56,7 +56,7 @@ void main(void)
         if(Flg.frame_ok_fag == 1)
         {
             Flg.frame_ok_fag = 0;
-            delay_ms(10);
+            //delay_ms(10);
             Serial_Processing();
         }
         TaskProcess();            // 任务处理

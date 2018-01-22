@@ -60,7 +60,7 @@ void show_temp_flash(void);
 // 定义结构体变量
 static TASK_COMPONENTS TaskComps[] =
 {
-    {0, 10,  10,  TaskKeyScan},               //按键扫描
+    {0, 20,  20,  TaskKeyScan},               //按键扫描
     {0, 10,  10,  TaskKeyPrs},             //按键进程函数
     {0, 100, 100, TaskShow},               // 显示任务
 
@@ -334,6 +334,8 @@ void time_cnt_del( uint8 id)
     if((id==AIR_VALVE)||(id==WATER_VALVE)||(id==LAMP_VALVE))//按摩，灯光键
     {
          Time_t.key_adj = 0;
+         Time_t.switch_cnt = 0;
+         ShowPar.switch_flg = 0;
     }
     if(id==DRAIN_VALVE)
     {
@@ -406,12 +408,12 @@ void  TAP_EventHandler(void)
         if(KeyPressDown&TAP_VALVE) //第一次按下
          {
             KeyPressDown = 0;
+            time_cnt_del(TAP_VALVE);
             if(Flg.lcd_sleep_flg == 1)
             {
                 show_tempture( ShowPar.temp_val);
                 return;
             }
-            time_cnt_del(TAP_VALVE);
             ShowPar.tap_state ^= 0x01;
             if(ShowPar.tap_state == STATE_ON)
             {
@@ -945,7 +947,6 @@ void LAMP_EventHandler(void)
             }
             KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:06
             dbg("lamp %x\r\n", KeyCmd.req.dat[DAT_VALVE]);
-
         }
     }
 }
@@ -967,7 +968,7 @@ void LAMP_EventHandler(void)
 *****************************************************************************/
 void LOCK_EventHandler(void) //10ms
 {
-    if(work_state == WORK_STATE_IDLE)
+    if((work_state == WORK_STATE_IDLE)&&(Flg.lock_flg ==0))
     {
         Flg.lock_flg =1;
         work_state = WORK_STATE_LOCK;
@@ -982,6 +983,7 @@ void LOCK_EventHandler(void) //10ms
     }
     if((work_state == WORK_STATE_LOCK)&&(Flg.lock_flg ==0))
     {
+       Flg.lock_flg =1;
        show_tempture( ShowPar.temp_val);
        work_state = WORK_STATE_IDLE;
        KeyCmd.req.dat[DAT_FUN_CMD]= FUN_LOCK;            // 功能码：进水开关改变
@@ -1158,7 +1160,7 @@ void show_work(void)
     if(1 == incdec_fag)
     {
         Time_t.incdec++;
-        if(Time_t.incdec>=10)
+        if(Time_t.incdec>=10) // 1s
         {
             incdec_fag = 0;
             Time_t.incdec = 0;
@@ -1502,6 +1504,7 @@ void Serial_Processing (void)
     KeyCmd.req.dat[DAT_CLAEN] = KeyCmd.rsp.dat[DAT_CLAEN];     //清洁状态
     KeyCmd.req.dat[DAT_TEM_PRE] = KeyCmd.rsp.dat[DAT_TEM_PRE];     //浴缸水温
     KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
+    delay_ms(10);
     send_dat(&KeyCmd.req, BUF_SIZE);
     KeyCmd.req.dat[DAT_FUN_CMD]=0;          //清功能码
     memset(&KeyCmd.rsp,0,sizeof(KeyCmd.rsp));
