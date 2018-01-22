@@ -1589,8 +1589,8 @@ void set_temp_val_dec(uint8 val)
     {
         Flg.temp_flash_flg = 0;
     }
-    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;                              // 功能码：水龙头出水温度改变
-    KeyCmd.req.dat[DAT_VALVE]=ShowPar.val&0x03;
+    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_TEMP;                              // 功能码：水龙头出水温度改变
+    KeyCmd.req.dat[DAT_VALVE]=0x00;
     KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
     KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
     show_tempture( ShowPar.temp_val);
@@ -1627,8 +1627,8 @@ void set_temp_val_inc(uint8 val)
     {
         Flg.temp_flash_flg = 0;
     }
-    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;        // 功能码：水龙头出水温度改变
-    KeyCmd.req.dat[DAT_VALVE]=ShowPar.val&0x03;
+    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_TEMP;        // 功能码：水龙头出水温度改变
+    KeyCmd.req.dat[DAT_VALVE]=0x00;
     KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
     KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
     show_tempture( ShowPar.temp_val);
