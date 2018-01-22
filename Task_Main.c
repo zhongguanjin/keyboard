@@ -736,6 +736,9 @@ void time_cnt_del( uint8 id)
     if((id==AIR_VALVE)||(id==WATER_VALVE)||(id==LAMP_VALVE))//按摩，灯光键
     {
          Time_t.key_adj = 0;
+        Time_t.switch_cnt = 0;
+        ShowPar.switch_flg = 0;
+
     }
     if(id==DRAIN_VALVE)
     {
@@ -1402,7 +1405,7 @@ void LAMP_EventHandler(void)
 *****************************************************************************/
 void LOCK_EventHandler(void) //10ms
 {
-    if(work_state == WORK_STATE_IDLE)
+    if((work_state == WORK_STATE_IDLE)&&(Flg.lock_flg ==0))
     {
         Flg.lock_flg =1;
         work_state = WORK_STATE_LOCK;
@@ -1417,6 +1420,7 @@ void LOCK_EventHandler(void) //10ms
     }
     if((work_state == WORK_STATE_LOCK)&&(Flg.lock_flg ==0))
     {
+       Flg.lock_flg =1;
        show_tempture( ShowPar.temp_val);
        work_state = WORK_STATE_IDLE;
        KeyCmd.req.dat[DAT_FUN_CMD]= FUN_LOCK;            // 功能码：进水开关改变
@@ -1939,6 +1943,7 @@ void Serial_Processing (void)
     KeyCmd.req.dat[DAT_CLAEN] = KeyCmd.rsp.dat[DAT_CLAEN];     //清洁状态
     KeyCmd.req.dat[DAT_TEM_PRE] = KeyCmd.rsp.dat[DAT_TEM_PRE];     //浴缸水温
     KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
+    delay_ms(10);
     send_dat(&KeyCmd.req, BUF_SIZE);
     KeyCmd.req.dat[DAT_FUN_CMD]=0;          //清功能码
     memset(&KeyCmd.rsp,0,sizeof(KeyCmd.rsp));
