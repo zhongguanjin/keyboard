@@ -17,7 +17,7 @@ uint8 tab_num[10]={
 0x10, //9
 };
 
-uint8 tab_val[17]={
+uint8 tab_val[18]={
 0xc0,   //0
 0xf9,  // 1
 0xa4,  // 2
@@ -35,6 +35,7 @@ uint8 tab_val[17]={
 0x8c, //14p-水按摩
 0x86, //15e-qi按摩
 0xc6, //16c-灯
+0x98, //17 q-
 };
 
 
@@ -76,6 +77,7 @@ void led_scan(void)
 }
 
 
+
 void show_tempture( uint16 data)//温度显示
 {
     digi_flg = 0;
@@ -83,6 +85,15 @@ void show_tempture( uint16 data)//温度显示
     digiBuf[0] = data/100;
     digiBuf[1] = (data%100)/10;
     digiBuf[2] = data%10;
+}
+
+void show_awaken()
+{
+    if(ShowPar.drain_state == ON)
+    {
+        LED_DRAIN_ON;
+    }
+    show_tempture( ShowPar.temp_val);
 }
 
 void show_lock ()//童锁显示
@@ -110,9 +121,9 @@ void show_clean() //清洁显示
 {
     digi_flg = 1;
     Flg.lcd_sleep_flg = 0;
-    digiBuf[0] = 10;
-    digiBuf[1] = 10;
-    digiBuf[2] = 10;
+    digiBuf[0] = 6;
+    digiBuf[1] = 17;
+    digiBuf[2] = 13;
 }
 
 void show_adj_key(uint8 id,uint8 dat) //档位调节显示
