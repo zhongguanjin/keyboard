@@ -98,4 +98,7 @@ extern void    show_sleep ();
 extern void    write_err_num(uint8 dat);
 extern void     show_adj_key(uint8 id,uint8 dat);
 extern void     show_clean(); //«ÂΩ‡œ‘ æ
+
+extern void show_awaken();
+
 #endif /* CAPT_APP_H_ */
