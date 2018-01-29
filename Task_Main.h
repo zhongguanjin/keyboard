@@ -50,7 +50,6 @@ uint8 Button_id = 0;   //按键id号
 typedef struct
 {
     uint8 lock_flg:1;
-    uint8 clean_flg:1;
     uint8 lcd_sleep_flg:1;      //lcd睡眠标志
     uint8 temp_flash_flg:1;     //极限温度 连续闪烁3次，闪烁频率1次/0.5秒标志
     uint8 frame_ok_fag:1;       //一帧数据正确标志
@@ -218,6 +217,7 @@ enum
     STATE_MAX
 };
 /* END:   Added by zgj, 2018/1/19 */
+
 
 
 //串口协议结构体

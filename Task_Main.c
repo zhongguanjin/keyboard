@@ -23,7 +23,7 @@ volatile uint8  key_switch_fag;          //按键调节切换标志
 volatile uint8  incdec_fag;
 static uint8  flash_cnt;        //极限温度 连续闪烁的次数
 
-
+volatile uint8 massage_dat =0;
 //按键变量
 uint8   KeyPressDown=0x00; //代表的是触发 第一次有效，后面会清0
 uint8   CurrReadKey;  //记录本次KeyScan()读取的IO口键值
@@ -41,6 +41,7 @@ static uint16 time_test =0;
 /* END:   Added by zgj, 2018/1/19 */
 
 static uint16 time_clean=0;
+uint8 clean_state;        //clean 步骤
 
 //函数申明
 uint8 CRC8_SUM(void * p, uint8 len);
@@ -67,6 +68,7 @@ void show_temp_flash(void);
 void TaskKeyTest(void); //100ms
 void EepromWriteByte(uint8 addr,uint8 data);
 uint8 EepromReadByte(uint8 addr);
+void TaskClean();
 
 
 // 定义结构体变量
@@ -105,7 +107,7 @@ typedef enum _TASK_LIST
     修改内容   : 新生成函数
 
 *****************************************************************************/
-void TaskShow(void)
+void TaskShow(void) //100ms
 {
     show_work();
     show_temp_flash();
@@ -115,8 +117,108 @@ void TaskShow(void)
     }
     if(work_state == WORK_STATE_TEST)
     {
-        TaskKeyTest();
-    }      //按键测试程序
+        TaskKeyTest();  //按键测试程序
+    }
+    if(work_state == WORK_STATE_CLEAN)
+    {
+       TaskClean();
+    }
+}
+
+/*****************************************************************************
+ 函 数 名  : TaskClean
+ 功能描述  : 清洁管道任务函数
+ 输入参数  : 无
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
+
+ 修改历史      :
+  1.日    期   : 2018年1月25日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
+void TaskClean()
+{
+    switch ( clean_state )
+    {
+        case STATE_1:
+            {
+                static uint16 state1_time = 0;
+                if((state1_time++)==10)  // 1s 后发送
+                {
+                    state1_time = 0;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
+                    clean_state = STATE_2;
+                }
+            }
+            break;
+        case STATE_2 :
+            {
+                static uint16 state2_time = 0;
+                if((state2_time++)==1800)// 3min
+                {
+                    state2_time = 0;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x02;
+                    clean_state = STATE_3;
+                }
+            }
+            break;
+        case STATE_3 :
+            {
+                static uint16 state3_time = 0;
+                if((KeyCmd.req.dat[DAT_LIQUID]&0x01)!=0x01) //低于低液位
+                {
+                    if((state3_time++)==9000)  //15min
+                    {
+                        state3_time = 0;
+                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
+                        KeyCmd.req.dat[DAT_VALVE] = 0x03;
+                        clean_state = STATE_4;
+                    }
+                }
+            }
+            break;
+        case STATE_4 :
+            {
+                static uint16 state4_time = 0;
+                if((KeyCmd.req.dat[DAT_LIQUID]&0x01)==0x01) //高于低液位
+                {
+                    if((state4_time++)==10)  // 1s
+                    {
+                        state4_time = 0;
+                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
+                        KeyCmd.req.dat[DAT_VALVE] = 0x04;
+                        clean_state = STATE_4;
+                    }
+                }
+            }
+            break;
+        case STATE_5 :
+            {
+                static uint16 state5_time = 0;
+                if((state5_time++)==1200)// 2min
+                {
+                    state5_time = 0;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x05;
+                }
+                if(state5_time ==1220)
+                {
+                    work_state =WORK_STATE_IDLE;
+                    KeyCmd.req.dat[DAT_FUN_CMD] = FUN_CLEAN; //功能码
+                    KeyCmd.req.dat[DAT_VALVE] =0x00;
+                    show_tempture(ShowPar.temp_val);
+                    clean_state = STATE_0;
+                }
+            }
+            break;
+    }
+
 }
 /*****************************************************************************
  函 数 名  : EepromWriteByte
@@ -302,7 +404,7 @@ void TaskKeyTest(void) //100ms
                      if((time5++) == 50)// 5s时间到
                      {
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
-                        KeyCmd.req.dat[DAT_VALVE] =0X02; //气按摩
+                        KeyCmd.req.dat[DAT_VALVE] =(0X02&0x6c); //气按摩
                      }
                      if((time5) == 80)// 8s时间到
                      {
@@ -344,14 +446,14 @@ void TaskKeyTest(void) //100ms
                 if((time7++)==60)// 6s时间到
                 {
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
-                    KeyCmd.req.dat[DAT_VALVE] =0X00; //关闭气按摩
+                    KeyCmd.req.dat[DAT_VALVE] =(0X00&0x6c); //关闭气按摩
 
                 }
                 if(time7 == 90)
                 {
                   time7 = 0;
                   KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
-                  KeyCmd.req.dat[DAT_VALVE] =0X01; //开水按摩
+                  KeyCmd.req.dat[DAT_VALVE] =(0X01&0x6c); //开水按摩
                   work_mode = STATE_8;
                 }
                 break;
@@ -363,7 +465,7 @@ void TaskKeyTest(void) //100ms
                 {
                     time8 = 0;
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
-                    KeyCmd.req.dat[DAT_VALVE] =0X03; //水和气按摩
+                    KeyCmd.req.dat[DAT_VALVE] =(0X03&0x6c); //水和气按摩
                     work_mode = STATE_9;
 
                 }
@@ -376,7 +478,7 @@ void TaskKeyTest(void) //100ms
                 {
                     time9 = 0;
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
-                    KeyCmd.req.dat[DAT_VALVE] =0X00; //水和气按摩
+                    KeyCmd.req.dat[DAT_VALVE] =(0X00&0x6c); //水和气按摩
                     work_mode = STATE_10;
                 }
                 break;
@@ -386,6 +488,7 @@ void TaskKeyTest(void) //100ms
                 static uint8 time10=0;
                 if((time10++)==30)// 3s时间到
                 {
+                    time10 = 0;
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT; //灯光功能
                     KeyCmd.req.dat[DAT_VALVE] =0x08; //循环变色
                     work_mode = STATE_11;
@@ -483,13 +586,13 @@ void TaskKeyTest(void) //100ms
                     if((time15++)==30)  // 3s时间到
                     {
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
-                        KeyCmd.req.dat[DAT_VALVE] =0X03; //水,气按摩
+                        KeyCmd.req.dat[DAT_VALVE] =(0X03&0x6c); //水,气按摩
                     }
                     if(time15==60) // 6s
                     {
                         time15 = 0;
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
-                        KeyCmd.req.dat[DAT_VALVE] =0X00; //关闭
+                        KeyCmd.req.dat[DAT_VALVE] =(0X00&0x6c); //关闭
                         if((test_cnt++)>999)
                         {
                           test_cnt = 0;
@@ -602,6 +705,7 @@ void TaskKeyPrs(void)  //10MS
 		case CLEAN_VALVE:
 		{
 		    //if(ShowPar.val == 0x00) //所有功能都关闭
+            if((KeyCmd.req.dat[DAT_LIQUID]&0x01) == 0x01) //低液位
 		    {
 			    CLEAN_EventHandler();
 			}
@@ -812,7 +916,7 @@ void show_temp_flash(void)//100ms
     修改内容   : 新生成函数
 
 *****************************************************************************/
-void  TAP_EventHandler(void)
+void TAP_EventHandler(void)
 {
     if(work_state == WORK_STATE_IDLE)
     {
@@ -1314,16 +1418,16 @@ void WATER_EventHandler(void)
     }
 	if(work_state == WORK_STATE_CLEAN)
 	{
-        if(KeyPressDown&WATER_VALVE)
+        if((LastKey&WATER_VALVE)&&((time_clean++)>=200))// 2s
         {
             KeyPressDown = 0;
     		//LED_WATER_OFF;
     		//LED_INC_OFF;
-    		Flg.clean_flg =0;
     		work_state =WORK_STATE_IDLE;
     		KeyCmd.req.dat[DAT_FUN_CMD] = FUN_CLEAN; //功能码
     		KeyCmd.req.dat[DAT_VALVE] =0x00;
     		show_tempture(ShowPar.temp_val);
+            clean_state = STATE_0;
     		dbg("clean cancel\r\n");
 		}
 	}
@@ -1567,14 +1671,11 @@ void CLEAN_EventHandler(void)
 		if((LastKey&CLEAN_VALVE)&&((time_clean++)>=300))// 3s
 		{
 			time_clean=0;
-            Flg.clean_flg=1;
 			//LED_INC_ON;
 			//LED_WATER_ON;
 			work_state = WORK_STATE_CLEAN;
 			show_clean();                           //清洁显示---
-			KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
-			KeyCmd.req.dat[DAT_VALVE] = 0x01;
-			dbg("clean start\r\n");
+			clean_state =STATE_1;
 		}
 	}
 }
@@ -1715,6 +1816,7 @@ void show_temp_actul(void) // 100ms
              {
                   Flg.temp_disreach_flg =0;
                   Time_t.temp_switch = 0;
+                  show_tempture( ShowPar.temp_val);
              }
         }
     }
@@ -1764,8 +1866,11 @@ uint8 CRC8_SUM(void *p,uint8 len)
 void key_state_update(void)
 {
     /* BEGIN: Added by zgj, 2018/1/15 */
+    massage_dat = (ShowPar.water_gear<<2)
+                 +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
     if((KeyCmd.rsp.dat[DAT_MASSAGE]!=KeyCmd.req.dat[DAT_MASSAGE])
-        ||((KeyCmd.rsp.dat[DAT_MASSAGE]&0x03)!=((ShowPar.val&0x60)>>5))) //按摩状态更新
+        ||(KeyCmd.rsp.dat[DAT_MASSAGE]!=massage_dat)) //按摩状态更新
+     //if(KeyCmd.rsp.dat[DAT_MASSAGE]!=KeyCmd.req.dat[DAT_MASSAGE])
     {
         ShowPar.air_gear = (KeyCmd.rsp.dat[DAT_MASSAGE]&0xE0)>>5;
         ShowPar.water_gear = (KeyCmd.rsp.dat[DAT_MASSAGE]&0x1C)>>2;
@@ -1950,45 +2055,42 @@ void Serial_Processing (void)
 {
     static uint8 state=0;
     memcpy(&KeyCmd.rsp,Recv_Buf,sizeof(KeyCmd.rsp));
-    //if(work_state != WORK_STATE_LOCK)
+    if(0 == KeyCmd.req.dat[DAT_FUN_CMD])  //判断功能码 按键板是否在使用
     {
-        if((KeyCmd.rsp.dat[DAT_ERR_NUM]&0x0F) != 0x00)
+       key_state_update();
+    }
+    if((KeyCmd.rsp.dat[DAT_ERR_NUM]&0x0F) != 0x00)
+    {
+        if(Flg.err_del_flg) //
         {
-            if(Flg.err_del_flg) //
+            static uint16 time_delay = 0;
+            if((time_delay++)>=20)// 2s
             {
-                static uint16 time_delay = 0;
-                if((time_delay++)>=20)// 2s
-                {
-                    time_delay = 0;
-                    Flg.err_del_flg =0;
-                    state =work_state;          //保存上次的状态
-                    work_state = WORK_STATE_ERR;
-                }
-            }
-            else
-            {
+                time_delay = 0;
+                Flg.err_del_flg =0;
+                state =work_state;          //保存上次的状态
                 work_state = WORK_STATE_ERR;
             }
         }
         else
         {
-            if(0 == KeyCmd.req.dat[DAT_FUN_CMD])  //判断功能码 按键板是否在使用
-            {
-               key_state_update();
-            }
-            if(work_state == WORK_STATE_ERR)
-            {
-               work_state = state;            //恢复上次状态
-               if(work_state == WORK_STATE_LOCK)
-               {
-                    show_lock();
-               }
-               else
-               {
-                    show_tempture( ShowPar.temp_val);
-               }
-               Time_t.sleep = 0;
-            }
+            work_state = WORK_STATE_ERR;
+        }
+    }
+    else
+    {
+        if(work_state == WORK_STATE_ERR)
+        {
+           work_state = state;            //恢复上次状态
+           if(work_state == WORK_STATE_LOCK)
+           {
+                show_lock();
+           }
+           else
+           {
+                show_tempture( ShowPar.temp_val);
+           }
+           Time_t.sleep = 0;
         }
     }
     KeyCmd.req.dat[DAT_ERR_NUM] =KeyCmd.rsp.dat[DAT_ERR_NUM];      //错误码
