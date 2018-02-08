@@ -14,6 +14,7 @@ enum
 #define     ERR_F6    0X02
 #define     ERR_F9    0X04
 #define     ERR_F8    0X08
+#define     ERR_F2    0X10
 #define     ERR_OK    0X00
 
 
@@ -94,7 +95,7 @@ extern void    LED_INIT();
 extern void    led_scan(void);
 extern void    show_lock ();
 extern void    show_state(uint8 state);
-extern void    show_sleep ();
+extern void    show_sleep (uint8 dat);
 extern void    write_err_num(uint8 dat);
 extern void     show_adj_key(uint8 id,uint8 dat);
 extern void     show_clean(); //«ÂΩ‡œ‘ æ
