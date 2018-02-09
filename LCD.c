@@ -105,13 +105,20 @@ void show_lock ()//ÕØÀ¯œ‘ æ
     digiBuf[2] = 13;
 }
 
-void show_sleep ( )  //lcd πÿ±’
+void show_sleep (uint8 dat )  //sleep
 {
     digi_flg = 1;
-    Flg.lcd_sleep_flg = 1;
-    LED_COM1_H;
-    LED_COM2_H;
-    LED_COM3_H;
+    if(dat == ON)
+    {
+        Flg.lcd_sleep_flg = 1;
+        LED_COM1_H;
+        LED_COM2_H;
+        LED_COM3_H;
+    }
+    else
+    {
+       Flg.lcd_sleep_flg = 0;
+    }
     digiBuf[0] = 13;
     digiBuf[1] = 13;
     digiBuf[2] = 13;
@@ -168,8 +175,16 @@ void write_err_num(uint8 dat) //π ’œ¬Îœ‘ æ
       {
           case ERR_F1:
               {
+                  //Flg.err_f1_flg =1;
                   digiBuf[0] = 12;//F
                   digiBuf[1] = 1; // 1
+                  digiBuf[2] = 13;//
+                  break;
+              }
+          case ERR_F2:
+              {
+                  digiBuf[0] = 12;//F
+                  digiBuf[1] = 2; // 2
                   digiBuf[2] = 13;//
                   break;
               }
