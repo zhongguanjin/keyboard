@@ -2,6 +2,7 @@
 #define LCD_H_
 
 #include    "config.h"
+#include "Task_Main.h"
 
 enum
 {
@@ -59,9 +60,20 @@ enum
 //°´¼üµÆ
 #define     LED_SFIO_OUT                        ( TRISF = 0 )
 
+#if  key_5
+#define     LED_TAP_OFF                         ( LATF5 = 0 )
+#define     LED_TAP_ON                          ( LATF5 = 1 )
+#define     LED_SHOWER_OFF                      ( LATF6 = 0 )
+#define     LED_SHOWER_ON                       ( LATF6 = 1 )
+#define     LED_DRAIN_OFF                       ( LATF7 = 0 )
+#define     LED_DRAIN_ON                        ( LATF7 = 1 )
+#define     LED_INC_OFF                         ( LATF3 = 0 )
+#define     LED_INC_ON                          ( LATF3 = 1 )
+#define     LED_DEC_OFF                         ( LATF4 = 0 )
+#define     LED_DEC_ON                          ( LATF4 = 1 )
+#else
 #define     LED_TAP_OFF                         ( LATF3 = 0 )
 #define     LED_TAP_ON                          ( LATF3 = 1 )
-
 #define     LED_SHOWER_OFF                      ( LATF4 = 0 )
 #define     LED_SHOWER_ON                       ( LATF4 = 1 )
 #define     LED_DRAIN_OFF                       ( LATF5 = 0 )
@@ -70,6 +82,8 @@ enum
 #define     LED_INC_ON                          ( LATF6 = 1 )
 #define     LED_DEC_OFF                         ( LATF7 = 0 )
 #define     LED_DEC_ON                          ( LATF7 = 1 )
+#endif
+
 
 
 #define     LED_WATER_OFF                       ( LATC5 = 0 )

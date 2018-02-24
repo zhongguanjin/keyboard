@@ -250,7 +250,11 @@ void TaskKeyPrs(void)  //10MS
 {
     uint8 id = 0;
     static uint16 count =0;
-    id =  Button_id &0Xff;
+#if key_5
+    id =  Button_id&0X1f;
+#else
+    id =  Button_id&0Xff;
+#endif
     switch ( id )
     {
         case TAP_VALVE:

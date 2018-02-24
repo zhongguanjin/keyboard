@@ -3,6 +3,7 @@
 
 #include "config.h"
 
+#define key_5  0
 
 // 任务结构体：
 typedef struct _TASK_COMPONENTS
@@ -16,18 +17,28 @@ typedef struct _TASK_COMPONENTS
 
 /*按键功能定义*/
 
+#if key_5
+
+#define   ALL_CLOSE          0X00
+#define   TAP_VALVE          0X04
+#define   SHOWER_VALVE       0X08
+#define   DRAIN_VALVE        0X10
+#define   INC_VALVE          0X01
+#define   DEC_VALVE          0X02
+#else
 #define   ALL_CLOSE          0X00
 #define   TAP_VALVE          0X01
 #define   SHOWER_VALVE       0X02
 #define   DRAIN_VALVE        0X04
 #define   INC_VALVE          0X08
 #define   DEC_VALVE          0X10
+#endif
 #define   WATER_VALVE        0X20
 #define   AIR_VALVE          0X40
 #define   LAMP_VALVE         0X80
-
 #define   LOCK_VALVE        (TAP_VALVE|SHOWER_VALVE|DEC_VALVE)
 #define   CLEAN_VALVE       (INC_VALVE|WATER_VALVE)
+
 
 
 //key io
