@@ -126,7 +126,7 @@ void send_dat(void *p,uint8 len)
     for(uint8 j=0;j<len;j++)
     {
         uart_send_byte(*temp);
-        if(j<len-1) //j<15
+        if(j<len-1) //j<32
         {
             temp++;
         }

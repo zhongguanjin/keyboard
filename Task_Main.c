@@ -419,7 +419,7 @@ void key_adjust(uint8 id,uint8 dat)
     修改内容   : 新生成函数
 
 *****************************************************************************/
-void time_cnt_del( uint8 id)
+void   time_cnt_del( uint8 id)
 {
     Time_t.sleep = 0;
     Time_t.temp38 = 0;
@@ -1676,7 +1676,7 @@ void receiveHandler(uint8 ui8Data)
         {
              if((Recv_Buf[31]== 0x04)&&(Recv_Buf[30]== 0x0B)&&(Recv_Buf[2] == 0x01)&&(Recv_Buf[1] == 0x3A))
              {
-                 for(uint8 i=2;i<crc_len;i++)
+                 for(uint8 i=2;i<(crc_len+2);i++)
                  {
                      check_sum^=Recv_Buf[i];
                  }

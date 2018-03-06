@@ -97,7 +97,6 @@ enum
 13- 下水器
 14- 管道清洁
 保留
-18- 错误码
 */
 //DAT数据枚举变量
 enum
@@ -120,10 +119,10 @@ enum
     DAT_LOCK,       //15
     DAT_SPARE2,
     DAT_SPARE3,
-    DAT_ERR_NUM,   //18
     DAT_MAX
 };
 
+#define DAT_ERR_NUM  26
 /*
 0x00 -- 空指令 查询
 0x01 -- 进水通道切换(此时流量与温度对应发生变化)
