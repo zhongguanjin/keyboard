@@ -2095,7 +2095,7 @@ void receiveHandler(uint8 ui8Data)
         {
              if((Recv_Buf[31]== 0x04)&&(Recv_Buf[30]== 0x0B)&&(Recv_Buf[2] == 0x01)&&(Recv_Buf[1] == 0x3A))
              {
-                 for(uint8 i=2;i<crc_len;i++)
+                 for(uint8 i=2;i<(crc_len+2);i++)
                  {
                      check_sum^=Recv_Buf[i];
                  }
@@ -2109,6 +2109,7 @@ void receiveHandler(uint8 ui8Data)
                  {
                       Recv_Len = 0;
                       Flg.frame_ok_fag=0;
+
                  }
              }
             if((Recv_Buf[31]!= 0x04)||(Recv_Buf[30]!= 0x0B)||(Recv_Buf[2] != 0x01)||(Recv_Buf[1] != 0x3A))  //结束码或者地址不对
