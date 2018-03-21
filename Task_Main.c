@@ -1163,12 +1163,13 @@ void IDLE_EventHandler(void) //10ms
     {
         if(Time_t.temp38 >= 30)  //温度保持30min钟 后切换成38度
         {
-            if((ShowPar.shower_state== OFF)&&(ShowPar.tap_state == OFF)) //龙头不再进水时
+            //if((ShowPar.shower_state== OFF)&&(ShowPar.tap_state == OFF)) //龙头不再进水时
             {
                 ShowPar.temp_val = 380;
-                KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;        // 功能码：水龙头出水温度改变
+                KeyCmd.req.dat[DAT_FUN_CMD]= FUN_TEMP;        // 功能码：水龙头出水温度改变
                 KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
                 KeyCmd.req.dat[DAT_TEMP_L]  = ShowPar.temp_val;
+                show_tempture(ShowPar.temp_val);
             }
             Time_t.temp38 = 0;
         }
@@ -1192,7 +1193,14 @@ void IDLE_EventHandler(void) //10ms
     if(Time_t.sleep++ >=6000) // 1min钟时间到  时基10ms
     {
        Time_t.sleep = 0;
-       Time_t.temp38++;
+       if(Flg.lcd_sleep_flg == 1) //面板休眠
+       {
+            Time_t.temp38++;
+       }
+       else
+       {
+            Time_t.temp38 = 0;
+       }
        if(work_state == WORK_STATE_IDLE)
        {
             dbg("1 min get\r\n");
