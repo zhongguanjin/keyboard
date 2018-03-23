@@ -101,8 +101,8 @@ void show_lock ()//童锁显示
     digi_flg = 1;
     Flg.lcd_sleep_flg = 0;
     digiBuf[0] = 0;
-    digiBuf[1] = 0;
-    digiBuf[2] = 13;
+    digiBuf[1] = 13;
+    digiBuf[2] = 0;
 }
 
 
@@ -130,8 +130,8 @@ void show_clean() //清洁显示
     digi_flg = 1;
     Flg.lcd_sleep_flg = 0;
     digiBuf[0] = 6;
-    digiBuf[1] = 17;
-    digiBuf[2] = 13;
+    digiBuf[1] = 13;
+    digiBuf[2] = 17;
 }
 
 void show_adj_key(uint8 id,uint8 dat) //档位调节显示

@@ -10,7 +10,7 @@ typedef struct
 {
      uint16 sleep ;                   //睡眠时间
      uint8  temp38;                  //温度切换38度的时间
-     uint16 temp_switch;                //进水时的温度和预设温度显示的时间计数
+     uint16 temp_switch;             //进水时的温度和预设温度显示的时间计数
      uint8  switch_cnt;            //on,off和温度切换的时间计数
      uint8  key_adj;              //按键lamp,water,air使用+,-的使用时间
      uint8  incdec;                //+,-键led灯亮灭控制时间
@@ -158,7 +158,7 @@ void TaskClean()
                 static uint16 state3_time = 0;
                 if((KeyCmd.req.dat[DAT_LIQUID]&0x01)!=0x01) //低于低液位
                 {
-                    if((state3_time++)==9000)  //15min
+                    if((state3_time++)==4800)  //8min
                     {
                         state3_time = 0;
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
@@ -178,7 +178,7 @@ void TaskClean()
                         state4_time = 0;
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
                         KeyCmd.req.dat[DAT_VALVE] = 0x04;
-                        clean_state = STATE_4;
+                        clean_state = STATE_5;
                     }
                 }
             }
@@ -188,16 +188,18 @@ void TaskClean()
                 static uint16 state5_time = 0;
                 if((state5_time++)==1200)// 2min
                 {
-                    state5_time = 0;
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
                     KeyCmd.req.dat[DAT_VALVE] = 0x05;
                 }
                 if(state5_time ==1220)
                 {
+                    state5_time = 0;
                     work_state =WORK_STATE_IDLE;
                     KeyCmd.req.dat[DAT_FUN_CMD] = FUN_CLEAN; //功能码
                     KeyCmd.req.dat[DAT_VALVE] =0x00;
                     show_tempture(ShowPar.temp_val);
+                    LED_WATER_OFF;
+                    LED_INC_OFF;
                     clean_state = STATE_0;
                 }
             }
@@ -253,7 +255,7 @@ void TaskKeyPrs(void)  //10MS
 #if key_5
     id =  Button_id&0X1f;
 #else
-    id =  Button_id&0Xff;
+    id =  Button_id&0Xff; //ff
 #endif
     switch ( id )
     {
@@ -429,7 +431,7 @@ void   time_cnt_del( uint8 id)
         Time_t.temp_switch =0;
         Flg.temp_disreach_flg =0;
     }
-    if((id==INC_VALVE)||(id==DEC_VALVE))//+,-
+    if((id==INC_VALVE)||(id==DEC_VALVE))    //+,-
     {
         if(key_switch_fag==0) //调节模式不要清除temp_switch的时间
         {
@@ -445,7 +447,6 @@ void   time_cnt_del( uint8 id)
          Time_t.key_adj = 0;
         Time_t.switch_cnt = 0;
         ShowPar.switch_flg = 0;
-
     }
     if(id==DRAIN_VALVE)
     {
@@ -519,7 +520,6 @@ void TAP_EventHandler(void)
         if(KeyPressDown&TAP_VALVE) //第一次按下
          {
             KeyPressDown = 0;
-            time_cnt_del(TAP_VALVE);
             if(Flg.lcd_sleep_flg == 1)
             {
                 show_awaken();
@@ -540,6 +540,7 @@ void TAP_EventHandler(void)
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;  // 功能码：进水开关改变
             KeyCmd.req.dat[DAT_VALVE] =  ShowPar.val&0x03; //数据码 龙头状态
+            time_cnt_del(TAP_VALVE);
             ShowPar.switch_flg = STATE_ON;
             show_state(ShowPar.tap_state);
             dbg("tap,%x\r\n",KeyCmd.req.dat[DAT_VALVE]);
@@ -582,7 +583,6 @@ void SHOWER_EventHandler(void)
         if(KeyPressDown&SHOWER_VALVE)  //第一次触发
         {
             KeyPressDown = 0;
-            time_cnt_del(SHOWER_VALVE);
             if(Flg.lcd_sleep_flg == 1)
             {
                 show_awaken();
@@ -601,6 +601,7 @@ void SHOWER_EventHandler(void)
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
             KeyCmd.req.dat[DAT_VALVE] =  ShowPar.val&0x03; //数据码 花洒
+            time_cnt_del(SHOWER_VALVE);
             ShowPar.switch_flg = STATE_ON;
             show_state(ShowPar.shower_state);
             dbg("shower,%x\r\n",KeyCmd.req.dat[DAT_VALVE]);
@@ -643,7 +644,6 @@ void DRAIN_EventHandler(void)
         if(KeyPressDown&DRAIN_VALVE)  //第一次触发
         {
             KeyPressDown = 0;
-            time_cnt_del(DRAIN_VALVE);
             if(Flg.lcd_sleep_flg == 1)
             {
                 show_awaken();
@@ -660,6 +660,7 @@ void DRAIN_EventHandler(void)
             }
             KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE;
             KeyCmd.req.dat[DAT_VALVE] = ShowPar.drain_state; //数据码 排水
+            time_cnt_del(DRAIN_VALVE);
             ShowPar.switch_flg = STATE_ON;
             show_state(ShowPar.drain_state);
             dbg("drainage,%x\r\n",KeyCmd.req.dat[DAT_VALVE]);
@@ -987,7 +988,6 @@ void WATER_EventHandler(void)
                del(WATER_VALVE);
                KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
                         +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
-
                 if(key_arry[top]==0)  //为空
                 {
                     Time_t.key_adj = 0;
@@ -1167,9 +1167,11 @@ void IDLE_EventHandler(void) //10ms
             {
                 ShowPar.temp_val = 380;
                 KeyCmd.req.dat[DAT_FUN_CMD]= FUN_TEMP;        // 功能码：水龙头出水温度改变
-                KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
-                KeyCmd.req.dat[DAT_TEMP_L]  = ShowPar.temp_val;
-                show_tempture(ShowPar.temp_val);
+                KeyCmd.req.dat[DAT_VALVE]=0x00;
+                KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
+                KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
+                //show_tempture( ShowPar.temp_val);
+                dbg("30min temp->38\r\n");
             }
             Time_t.temp38 = 0;
         }
@@ -1321,9 +1323,11 @@ void show_temp_actul(void) // 100ms
         if((ShowPar.tap_state == ON)||(ShowPar.shower_state == ON )) //出水状态
         {
             uint16 pre_tem=0;
+            static uint8 temp_count =0;
             pre_tem = KeyCmd.req.dat[DAT_TEM_OUT]*10;
             if((pre_tem < ShowPar.temp_val-20)||((pre_tem > ShowPar.temp_val+20))) //达不到预设温度
             {
+                temp_count = 0;
                 if(Time_t.temp_switch<1000)
                 {
                     Time_t.temp_switch++;
@@ -1384,7 +1388,11 @@ void show_temp_actul(void) // 100ms
              {
                   Flg.temp_disreach_flg =0;
                   Time_t.temp_switch = 0;
-                  show_tempture( ShowPar.temp_val);
+                  if((temp_count++)>=5)
+                  {
+                      temp_count = 0;
+                      show_tempture( ShowPar.temp_val);
+                  }
              }
         }
     }
@@ -1438,11 +1446,54 @@ void key_state_update(void)
                  +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
     if((KeyCmd.rsp.dat[DAT_MASSAGE]!=KeyCmd.req.dat[DAT_MASSAGE])
         ||(KeyCmd.rsp.dat[DAT_MASSAGE]!=massage_dat)) //按摩状态更新
-     //if(KeyCmd.rsp.dat[DAT_MASSAGE]!=KeyCmd.req.dat[DAT_MASSAGE])
+    //if(KeyCmd.rsp.dat[DAT_MASSAGE]!=KeyCmd.req.dat[DAT_MASSAGE])
     {
+        time_cnt_del(AIR_VALVE);
         ShowPar.air_gear = (KeyCmd.rsp.dat[DAT_MASSAGE]&0xE0)>>5;
         ShowPar.water_gear = (KeyCmd.rsp.dat[DAT_MASSAGE]&0x1C)>>2;
         KeyCmd.req.dat[DAT_MASSAGE] =KeyCmd.rsp.dat[DAT_MASSAGE];
+        if((KeyCmd.req.dat[DAT_MASSAGE]&0x01)==0x01) //水按摩开启
+        {
+            ShowPar.water_state =ON;
+            LED_WATER_ON;
+            add(WATER_VALVE);
+            key_adjust(key_arry[top],ShowPar.water_gear);
+        }
+        else if((KeyCmd.req.dat[DAT_MASSAGE]&0x01)==0)
+        {
+            ShowPar.water_state =OFF;
+            if(work_state!=WORK_STATE_CLEAN)
+            {
+                LED_WATER_OFF;
+            }
+            del(WATER_VALVE);
+            if((key_arry[top]==0)&&(work_state != WORK_STATE_LOCK))  //为空
+            {
+                Time_t.key_adj = 0;
+                key_switch_fag = 0;
+                show_tempture( ShowPar.temp_val);
+            }
+        }
+        if((KeyCmd.req.dat[DAT_MASSAGE]&0x02)==0x02) //air按摩开启
+        {
+            ShowPar.air_state =ON;
+            LED_AIR_ON;
+            add(AIR_VALVE);
+            key_adjust(key_arry[top],ShowPar.air_gear);
+        }
+        else if((KeyCmd.req.dat[DAT_MASSAGE]&0x02)==0)
+        {
+            ShowPar.air_state =OFF;
+            LED_AIR_OFF;
+            del(AIR_VALVE);
+            if((key_arry[top]==0)&&(work_state != WORK_STATE_LOCK))  //为空
+            {
+                Time_t.key_adj = 0;
+                key_switch_fag = 0;
+                show_tempture( ShowPar.temp_val);
+            }
+        }
+        /*
         switch ( KeyCmd.req.dat[DAT_MASSAGE]&0x03)
         {
             case 0:
@@ -1454,6 +1505,7 @@ void key_state_update(void)
                         LED_WATER_OFF;
                     }
                     LED_AIR_OFF;
+
                 }
                 break;
             case 1 :
@@ -1484,16 +1536,19 @@ void key_state_update(void)
                 }
                 break;
         }
+        */
     }
     if((KeyCmd.rsp.dat[DAT_STATE]!=KeyCmd.req.dat[DAT_STATE])
         ||(KeyCmd.rsp.dat[DAT_STATE]!=(ShowPar.val&0x03))) //出水状态更新
     {
         KeyCmd.req.dat[DAT_STATE] =KeyCmd.rsp.dat[DAT_STATE];
         time_cnt_del(TAP_VALVE);
+        /*
         if(work_state == WORK_STATE_IDLE)
         {
             show_tempture(ShowPar.temp_val);
-        }
+        }*/
+        /* END: Deleted by zgj, 2018/3/22 */
         switch ( KeyCmd.req.dat[DAT_STATE]&0x03)
         {
             case 0 :
@@ -1536,14 +1591,7 @@ void key_state_update(void)
             {
                 Time_t.key_adj = 0;
                 key_switch_fag = 0;
-                if(Flg.err_flg ==1) //有错误
-                {
-                    write_err_num(KeyCmd.req.dat[DAT_ERR_NUM]&0x0F);
-                }
-                else
-                {
-                    show_tempture( ShowPar.temp_val);
-                }
+                show_tempture( ShowPar.temp_val);
             }
        }
        else
@@ -1557,6 +1605,7 @@ void key_state_update(void)
     }
     if(KeyCmd.rsp.dat[DAT_DRAIN]!=KeyCmd.req.dat[DAT_DRAIN]) //drain状态更新
     {
+         time_cnt_del(DRAIN_VALVE);
          KeyCmd.req.dat[DAT_DRAIN] =KeyCmd.rsp.dat[DAT_DRAIN];
         if(KeyCmd.req.dat[DAT_DRAIN] == 0)
         {
