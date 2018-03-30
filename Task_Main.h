@@ -3,6 +3,7 @@
 
 #include "config.h"
 
+#define key_5  0
 
 // 任务结构体：
 typedef struct _TASK_COMPONENTS
@@ -16,16 +17,25 @@ typedef struct _TASK_COMPONENTS
 
 /*按键功能定义*/
 
+#if key_5
+
+#define   ALL_CLOSE          0X00
+#define   TAP_VALVE          0X04
+#define   SHOWER_VALVE       0X08
+#define   DRAIN_VALVE        0X10
+#define   INC_VALVE          0X01
+#define   DEC_VALVE          0X02
+#else
 #define   ALL_CLOSE          0X00
 #define   TAP_VALVE          0X01
 #define   SHOWER_VALVE       0X02
 #define   DRAIN_VALVE        0X04
 #define   INC_VALVE          0X08
 #define   DEC_VALVE          0X10
+#endif
 #define   WATER_VALVE        0X20
 #define   AIR_VALVE          0X40
 #define   LAMP_VALVE         0X80
-
 #define   LOCK_VALVE        (TAP_VALVE|SHOWER_VALVE|DEC_VALVE)
 #define   CLEAN_VALVE       (INC_VALVE|WATER_VALVE)
 
@@ -89,7 +99,6 @@ enum
 13- 下水器
 14- 管道清洁
 保留
-18- 错误码
 */
 //DAT数据枚举变量
 enum
@@ -112,10 +121,10 @@ enum
     DAT_LOCK,       //15
     DAT_SPARE2,
     DAT_SPARE3,
-    DAT_ERR_NUM,   //18
     DAT_MAX
 };
 
+#define DAT_ERR_NUM  26
 /*
 0x00 -- 空指令 查询
 0x01 -- 进水通道切换(此时流量与温度对应发生变化)
