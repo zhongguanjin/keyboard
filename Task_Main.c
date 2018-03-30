@@ -1117,7 +1117,7 @@ void LOCK_EventHandler(void) //10ms
         }
         KeyCmd.req.dat[DAT_FUN_CMD]= FUN_LOCK;            // 功能码：进水开关改变
         KeyCmd.req.dat[DAT_VALVE] = 0x01;
-        KeyCmd.req.dat[DAT_LOCK] = 0x01;
+        //KeyCmd.req.dat[DAT_LOCK] = 0x01;
         dbg("idle -> lock,%x\r\n",KeyCmd.req.dat[DAT_VALVE]);
     }
     if((work_state == WORK_STATE_LOCK)&&(Flg.lock_flg ==0))
@@ -1127,7 +1127,7 @@ void LOCK_EventHandler(void) //10ms
        work_state = WORK_STATE_IDLE;
        KeyCmd.req.dat[DAT_FUN_CMD]= FUN_LOCK;            // 功能码：进水开关改变
        KeyCmd.req.dat[DAT_VALVE] = 0x00;
-       KeyCmd.req.dat[DAT_LOCK] = 0x00;
+       //KeyCmd.req.dat[DAT_LOCK] = 0x00;
        dbg("lock -> idle\r\n");
     }
 }
