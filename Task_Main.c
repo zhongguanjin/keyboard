@@ -23,7 +23,7 @@ volatile uint8  key_switch_fag;          //按键调节切换标志
 volatile uint8  incdec_fag;
 static uint8  flash_cnt;        //极限温度 连续闪烁的次数
 
-volatile uint8 massage_dat =0;
+
 //按键变量
 uint8   KeyPressDown=0x00; //代表的是触发 第一次有效，后面会清0
 uint8   CurrReadKey;  //记录本次KeyScan()读取的IO口键值
@@ -1441,15 +1441,13 @@ uint8 CRC8_SUM(void *p,uint8 len)
 *****************************************************************************/
 void key_state_update(void)
 {
+
     /* BEGIN: Added by zgj, 2018/1/15 */
-    massage_dat = (ShowPar.water_gear<<2)
-                 +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
-    if((KeyCmd.rsp.dat[DAT_MASSAGE]!=KeyCmd.req.dat[DAT_MASSAGE])
-        ||(KeyCmd.rsp.dat[DAT_MASSAGE]!=massage_dat)) //按摩状态更新
-    //if(KeyCmd.rsp.dat[DAT_MASSAGE]!=KeyCmd.req.dat[DAT_MASSAGE])
+    uint8 massage_dat = (ShowPar.water_gear<<2)+(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
+    if(((KeyCmd.rsp.dat[DAT_MASSAGE]&0x1D)!=(KeyCmd.req.dat[DAT_MASSAGE]&0x1D))
+        ||((KeyCmd.rsp.dat[DAT_MASSAGE]&0x1D)!=(massage_dat&0x1D))) //水按摩状态更新
     {
-        time_cnt_del(AIR_VALVE);
-        ShowPar.air_gear = (KeyCmd.rsp.dat[DAT_MASSAGE]&0xE0)>>5;
+        time_cnt_del(WATER_VALVE);
         ShowPar.water_gear = (KeyCmd.rsp.dat[DAT_MASSAGE]&0x1C)>>2;
         KeyCmd.req.dat[DAT_MASSAGE] =KeyCmd.rsp.dat[DAT_MASSAGE];
         if((KeyCmd.req.dat[DAT_MASSAGE]&0x01)==0x01) //水按摩开启
@@ -1459,7 +1457,7 @@ void key_state_update(void)
             add(WATER_VALVE);
             key_adjust(key_arry[top],ShowPar.water_gear);
         }
-        else if((KeyCmd.req.dat[DAT_MASSAGE]&0x01)==0)
+        else if((KeyCmd.req.dat[DAT_MASSAGE]&0x01)==0) //水按摩关闭
         {
             ShowPar.water_state =OFF;
             if(work_state!=WORK_STATE_CLEAN)
@@ -1474,17 +1472,28 @@ void key_state_update(void)
                 show_tempture( ShowPar.temp_val);
             }
         }
-        if((KeyCmd.req.dat[DAT_MASSAGE]&0x02)==0x02) //air按摩开启
+    }
+
+    if(((KeyCmd.rsp.dat[DAT_MASSAGE]&0xE2)!=(KeyCmd.req.dat[DAT_MASSAGE]&0xE2)
+        ||((KeyCmd.rsp.dat[DAT_MASSAGE]&0xE2)!=(massage_dat&0xE2)))) //气按摩状态更新
+    {
+        time_cnt_del(AIR_VALVE);
+        ShowPar.air_gear = (KeyCmd.rsp.dat[DAT_MASSAGE]&0xE0)>>5;
+        KeyCmd.req.dat[DAT_MASSAGE] =KeyCmd.rsp.dat[DAT_MASSAGE];
+        if((KeyCmd.req.dat[DAT_MASSAGE]&0x02)==0x02) //气按摩开启
         {
             ShowPar.air_state =ON;
             LED_AIR_ON;
             add(AIR_VALVE);
             key_adjust(key_arry[top],ShowPar.air_gear);
         }
-        else if((KeyCmd.req.dat[DAT_MASSAGE]&0x02)==0)
+        else if((KeyCmd.req.dat[DAT_MASSAGE]&0x02)==0) //气按摩关闭
         {
             ShowPar.air_state =OFF;
-            LED_AIR_OFF;
+            if(work_state!=WORK_STATE_CLEAN)
+            {
+                LED_AIR_OFF;
+            }
             del(AIR_VALVE);
             if((key_arry[top]==0)&&(work_state != WORK_STATE_LOCK))  //为空
             {
@@ -1493,50 +1502,6 @@ void key_state_update(void)
                 show_tempture( ShowPar.temp_val);
             }
         }
-        /*
-        switch ( KeyCmd.req.dat[DAT_MASSAGE]&0x03)
-        {
-            case 0:
-                {
-                    ShowPar.air_state = OFF;
-                    ShowPar.water_state =OFF;
-                    if(work_state!=WORK_STATE_CLEAN)
-                    {
-                        LED_WATER_OFF;
-                    }
-                    LED_AIR_OFF;
-
-                }
-                break;
-            case 1 :
-                {
-                    ShowPar.air_state = OFF;
-                    ShowPar.water_state =ON;
-                    LED_WATER_ON;
-                    LED_AIR_OFF;
-                }
-                 break;
-            case 2 :
-                {
-                    ShowPar.air_state = ON;
-                    ShowPar.water_state =OFF;
-                    if(work_state!=WORK_STATE_CLEAN)
-                    {
-                        LED_WATER_OFF;
-                    }
-                    LED_AIR_ON;
-                }
-                break;
-            case 3 :
-                {
-                    ShowPar.air_state = ON;
-                    ShowPar.water_state =ON;
-                    LED_WATER_ON;
-                    LED_AIR_ON;
-                }
-                break;
-        }
-        */
     }
     if((KeyCmd.rsp.dat[DAT_STATE]!=KeyCmd.req.dat[DAT_STATE])
         ||(KeyCmd.rsp.dat[DAT_STATE]!=(ShowPar.val&0x03))) //出水状态更新
@@ -1576,7 +1541,6 @@ void key_state_update(void)
                 }
                 break;
         }
-
     }
     if(KeyCmd.rsp.dat[DAT_LIGHT]!=KeyCmd.req.dat[DAT_LIGHT]) //lamp状态更新
     {
@@ -1700,6 +1664,7 @@ void Serial_Processing (void)
     KeyCmd.req.dat[DAT_TEM_OUT] = KeyCmd.rsp.dat[DAT_TEM_OUT];     //实际温度
     KeyCmd.req.dat[DAT_KEEP_WARM] = KeyCmd.rsp.dat[DAT_KEEP_WARM];     //保温状态
     KeyCmd.req.dat[DAT_CLAEN] = KeyCmd.rsp.dat[DAT_CLAEN];     //清洁状态
+
     KeyCmd.req.dat[DAT_TEM_PRE] = KeyCmd.rsp.dat[DAT_TEM_PRE];     //浴缸水温
     KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
     delay_ms(5);
