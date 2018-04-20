@@ -89,10 +89,12 @@ void show_tempture( uint16 data)//温度显示
 
 void show_awaken()
 {
+    /*
     if(ShowPar.drain_state == ON)
     {
         LED_DRAIN_ON;
     }
+    */
     show_tempture( ShowPar.temp_val);
 }
 
@@ -134,6 +136,14 @@ void show_clean() //清洁显示
     digiBuf[2] = 17;
 }
 
+void show_wifi_pair(uint8 bai,uint8 shi,uint8 ge) //wifi pair 显示 ---
+{
+    digi_flg = 1;
+    Flg.lcd_sleep_flg = 0;
+    digiBuf[0] = bai;
+    digiBuf[1] = shi;
+    digiBuf[2] = ge;
+}
 void show_adj_key(uint8 id,uint8 dat) //档位调节显示
 {
     digi_flg = 1;

@@ -32,13 +32,15 @@ typedef struct _TASK_COMPONENTS
 #define   DRAIN_VALVE        0X04
 #define   INC_VALVE          0X08
 #define   DEC_VALVE          0X10
+
 #endif
 #define   WATER_VALVE        0X20
 #define   AIR_VALVE          0X40
 #define   LAMP_VALVE         0X80
 #define   LOCK_VALVE        (TAP_VALVE|SHOWER_VALVE|DEC_VALVE)
 #define   CLEAN_VALVE       (INC_VALVE|WATER_VALVE)
-
+/*WIFI PAIR*/
+#define   WIFI_VALVE        (TAP_VALVE|DRAIN_VALVE)
 
 
 //key io
@@ -55,7 +57,7 @@ typedef struct _TASK_COMPONENTS
 uint8       Recv_Buf[BUF_SIZE+8];
 
 uint8 Button_id = 0;   //按键id号
-
+uint8 frame_err=0;
 
 typedef struct
 {
@@ -74,8 +76,8 @@ enum
 {
   WORK_STATE_IDLE = 0,
   WORK_STATE_LOCK,      //儿童锁
-  WORK_STATE_ERR,
   WORK_STATE_CLEAN,
+  WORK_WIFI_PAIR,
   WORK_STATE_MAX
 };
 
@@ -123,6 +125,7 @@ enum
 };
 
 #define DAT_ERR_NUM  26
+#define DAT_WIFI_PAIR 19
 /*
 0x00 -- 空指令 查询
 0x01 -- 进水通道切换(此时流量与温度对应发生变化)
@@ -147,6 +150,7 @@ enum
     FUN_CLEAN,      //7
     FUN_LIGHT,      //8
     FUN_LOCK,       //9
+    FUN_WIFI,
     FUN_MAX
 };
 
@@ -265,7 +269,7 @@ extern void TaskProcess(void);
 extern void TaskRemarks(void);
 extern void receiveHandler(uint8 ui8Data);
 extern void Serial_Processing (void);
-
+extern uint8 CRC8_SUM(void * p, uint8 len);
 
 #endif
 
