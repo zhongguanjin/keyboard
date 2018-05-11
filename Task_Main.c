@@ -100,7 +100,7 @@ typedef enum _TASK_LIST
     修改内容   : 新生成函数
 
 *****************************************************************************/
-void TaskShow(void)
+void TaskShow(void) //100ms
 {
     show_work();
     show_temp_flash();
@@ -110,7 +110,26 @@ void TaskShow(void)
 	}
     if(work_state == WORK_STATE_CLEAN)
     {
-       TaskClean();
+       if(Flg.clean_err_flg == 0)
+       {
+            TaskClean();
+       }
+       else
+       {
+            static uint8 cnt =0;
+            if((cnt%10)==5)
+            {
+               show_sleep(OFF);
+            }
+            if((cnt%10)==9)
+            {
+                show_clean();
+            }
+            if((cnt++)>=100)
+            {
+                cnt=0;
+            }
+       }
     }
 }
 
@@ -202,11 +221,11 @@ void TaskClean()
                     KeyCmd.req.dat[DAT_FUN_CMD] = FUN_CLEAN; //功能码
                     KeyCmd.req.dat[DAT_VALVE] =0x00;
                     show_tempture(ShowPar.temp_val);
-                    LED_WATER_OFF;
-                    LED_INC_OFF;
                     clean_state = STATE_0;
                 }
             }
+            break;
+         default:
             break;
     }
 
@@ -305,8 +324,7 @@ void TaskKeyPrs(void)  //10MS
         }
 		case CLEAN_VALVE:
 		{
-		    //if(ShowPar.val == 0x00) //所有功能都关闭
-            if((KeyCmd.req.dat[DAT_LIQUID]&0x01) == 0x01) //低液位
+            //if((KeyCmd.req.dat[DAT_LIQUID]&0x01) == 0x01) //低液位
 		    {
 			    CLEAN_EventHandler();
 			}
@@ -435,7 +453,7 @@ void key_adjust(uint8 id,uint8 dat)
     修改内容   : 新生成函数
 
 *****************************************************************************/
-void   time_cnt_del( uint8 id)
+void time_cnt_del( uint8 id)
 {
     Time_t.sleep = 0;
     Time_t.temp38 = 0;
@@ -459,8 +477,8 @@ void   time_cnt_del( uint8 id)
     if((id==AIR_VALVE)||(id==WATER_VALVE)||(id==LAMP_VALVE))//按摩，灯光键
     {
          Time_t.key_adj = 0;
-        Time_t.switch_cnt = 0;
-        ShowPar.switch_flg = 0;
+         Time_t.switch_cnt = 0;
+         ShowPar.switch_flg = 0;
     }
     if(id==DRAIN_VALVE)
     {
@@ -984,8 +1002,7 @@ void WATER_EventHandler(void)
         if((LastKey&WATER_VALVE)&&((time_clean++)>=200))// 2s
         {
             KeyPressDown = 0;
-    		LED_WATER_OFF;
-    		LED_INC_OFF;
+            Flg.clean_err_flg = 0;
     		work_state =WORK_STATE_IDLE;
     		KeyCmd.req.dat[DAT_FUN_CMD] = FUN_CLEAN; //功能码
     		KeyCmd.req.dat[DAT_VALVE] =0x00;
@@ -1266,12 +1283,17 @@ void CLEAN_EventHandler(void)
 	{
 		if((LastKey&CLEAN_VALVE)&&((time_clean++)>=300))// 3s
 		{
-		    //if((KeyCmd.req.dat[DAT_LIQUID]&0x01) == 0x01) //低液位
+            time_clean=0;
+            work_state = WORK_STATE_CLEAN;
+		    if((KeyCmd.req.dat[DAT_LIQUID]&0x01) == 0x01) //低液位
 		    {
-    			time_clean=0;
-    			work_state = WORK_STATE_CLEAN;
+		        Flg.clean_err_flg = 0;
     			show_clean();                           //清洁显示---
     			clean_state =STATE_1;
+    	    }
+    	    else
+    	    {
+                Flg.clean_err_flg = 1;
     	    }
 		}
 	}
@@ -1610,6 +1632,26 @@ void key_state_update(void)
             LED_DRAIN_ON;
         }
     }
+    if(KeyCmd.rsp.dat[DAT_LOCK]!=KeyCmd.req.dat[DAT_LOCK]) //童锁状态更新
+    {
+        KeyCmd.req.dat[DAT_LOCK] =KeyCmd.rsp.dat[DAT_LOCK];
+        if(KeyCmd.req.dat[DAT_LOCK] == 1)                // lock
+        {
+            show_lock();
+            /*
+            if(ShowPar.drain_state == ON)
+            {
+                LED_DRAIN_OFF;
+            }
+            */
+            work_state =WORK_STATE_LOCK;
+        }
+        else
+        {
+            show_tempture(ShowPar.temp_val);
+            work_state =WORK_STATE_IDLE;
+        }
+    }
 }
 /*****************************************************************************
  函 数 名  : key_work_process
@@ -1652,16 +1694,13 @@ void key_work_process( void )
             }
         case WORK_STATE_LOCK:
             {
+                /*
                 if(KeyCmd.rsp.dat[DAT_LOCK]!=KeyCmd.req.dat[DAT_LOCK]) //童锁状态更新
                 {
                     KeyCmd.req.dat[DAT_LOCK] =KeyCmd.rsp.dat[DAT_LOCK];
                     if(KeyCmd.req.dat[DAT_LOCK] == 1)                // lock
                     {
                         show_lock();
-                        if(ShowPar.drain_state == ON)
-                        {
-                            LED_DRAIN_OFF;
-                        }
                         work_state =WORK_STATE_LOCK;
                     }
                     else
@@ -1670,11 +1709,11 @@ void key_work_process( void )
                         work_state =WORK_STATE_IDLE;
                     }
                 }
+                */
                 break;
             }
         case WORK_STATE_CLEAN:
             {
-                /*
                 if(KeyCmd.rsp.dat[DAT_CLAEN]!=KeyCmd.req.dat[DAT_CLAEN]) //清洁状态更新
                 {
                     KeyCmd.req.dat[DAT_CLAEN] =KeyCmd.rsp.dat[DAT_CLAEN];
@@ -1689,7 +1728,6 @@ void key_work_process( void )
                         work_state =WORK_STATE_IDLE;
                     }
                 }
-                */
                 break;
             }
         case WORK_WIFI_PAIR:
@@ -1800,6 +1838,7 @@ void receiveHandler(uint8 ui8Data)
                           err_cnt++;
                           if( err_cnt>=10)
                           {
+                            err_cnt=0;
                             frame_err=1;
                           }
                      }
@@ -1810,6 +1849,7 @@ void receiveHandler(uint8 ui8Data)
                     err_cnt++;
                     if(err_cnt>=10)
                     {
+                        err_cnt=0;
                         frame_err=1;
                     }
                     Flg.frame_ok_fag = 0;
@@ -1967,7 +2007,7 @@ void TaskRemarks(void)
     for (i=0; i<TASKS_MAX; i++)                                 // 逐个任务时间处理
     {
          if (TaskComps[i].Timer)                                // 时间不为0
-        {
+         {
             TaskComps[i].Timer--;                                // 减去一个节拍
             if (TaskComps[i].Timer == 0)                            // 时间减完了
             {

@@ -80,11 +80,20 @@ void led_scan(void)
 
 void show_tempture( uint16 data)//Œ¬∂»œ‘ æ
 {
+    uint8 dat =0;
     digi_flg = 0;
     Flg.lcd_sleep_flg = 0;
     digiBuf[0] = data/100;
     digiBuf[1] = (data%100)/10;
-    digiBuf[2] = data%10;
+    dat = data%10;
+    if(dat<5)
+    {
+       digiBuf[2] = 0;
+    }
+    else
+    {
+       digiBuf[2] = 5;
+    }
 }
 
 void show_awaken()
@@ -186,7 +195,6 @@ void write_err_num(uint8 dat) //π ’œ¬Îœ‘ æ
       {
           case ERR_F1:
               {
-                  //Flg.err_f1_flg =1;
                   digiBuf[0] = 12;//F
                   digiBuf[1] = 1; // 1
                   digiBuf[2] = 13;//
