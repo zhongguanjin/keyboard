@@ -63,6 +63,7 @@ void TaskClean();
 void WIFI_EventHandler(void);
 void key_work_process( void );
 void judge_err_num(void);
+void check_uart(void);
 
 // 定义结构体变量
 static TASK_COMPONENTS TaskComps[] =
@@ -103,6 +104,7 @@ typedef enum _TASK_LIST
 void TaskShow(void) //100ms
 {
     show_work();
+	check_uart();
     show_temp_flash();
     if(key_switch_fag ==0)
     {
@@ -231,6 +233,20 @@ void TaskClean()
 
 }
 
+void check_uart(void)
+{
+	if ((RC1STAbits.FERR == 1) || (RC1STAbits.OERR == 1))
+	{
+		static uint8 error_rc = 0;
+		error_rc = RCREG;
+		NOP();
+		error_rc = RCREG;
+		RC1STAbits.CREN = 0;
+		NOP();
+		RC1STAbits.CREN = 1;
+		Init_UART1();
+	}
+}
 /*****************************************************************************
  函 数 名  : TaskKeyScan
  功能描述  : 按键扫描任务
@@ -1110,6 +1126,7 @@ void WIFI_EventHandler(void) //10ms
         show_wifi_pair(10,10,10);
         KeyCmd.req.dat[DAT_FUN_CMD]= FUN_WIFI;            // 功能码：wifi pair
         KeyCmd.req.dat[DAT_VALVE] = 0x01;
+		KeyCmd.req.dat[DAT_WIFI_PAIR] = 0x00;
         dbg("idle -> wifi pair\r\n");
     }
 }
