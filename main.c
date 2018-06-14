@@ -24,6 +24,7 @@ void Init_Sys(void)
 	Init_MCU();
     BSP_init();
 	Init_UART1();
+    Init_UART2();
 	Init_TMR0();
 	//Init_TMR6();
 	GIE		= 1;
@@ -55,7 +56,6 @@ void main(void)
         if(Flg.frame_ok_fag == 1)
         {
             Flg.frame_ok_fag = 0;
-            //delay_ms(10);
             Serial_Processing();
         }
         TaskProcess();            // 任务处理
@@ -93,6 +93,11 @@ void interrupt ISR(void)
         }
 	}
 	*/
+    if(RCIE && RCIF)
+    {
+        RCIF=0;
+        receiveHandler(RCREG);
+    }
     if(TMR0IF && TMR0IE)     // 1ms中断一次
     {
         TMR0IF = 0;
@@ -105,10 +110,5 @@ void interrupt ISR(void)
             led_scan();
         }
         TaskRemarks();       //任务标记轮询处理
-    }
-    if(RCIE && RCIF)
-    {
-        RCIF=0;
-        receiveHandler(RCREG);
     }
 }

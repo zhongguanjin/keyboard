@@ -258,7 +258,7 @@ typedef struct
 
 
  tKeyCmd_t  KeyCmd;
- uint8 Recv_Len = 0;	// 接收长度
+
  tShowParams_t  ShowPar ;
 
 
@@ -271,6 +271,6 @@ extern void TaskRemarks(void);
 extern void receiveHandler(uint8 ui8Data);
 extern void Serial_Processing (void);
 extern uint8 CRC8_SUM(void * p, uint8 len);
-
+extern void check_uart(void);
 #endif
 

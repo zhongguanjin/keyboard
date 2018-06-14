@@ -63,7 +63,7 @@ void TaskClean();
 void WIFI_EventHandler(void);
 void key_work_process( void );
 void judge_err_num(void);
-void check_uart(void);
+
 
 // 定义结构体变量
 static TASK_COMPONENTS TaskComps[] =
@@ -237,6 +237,7 @@ void check_uart(void)
 {
 	if ((RC1STAbits.FERR == 1) || (RC1STAbits.OERR == 1))
 	{
+	    dbg("FERR/OERR");
 		static uint8 error_rc = 0;
 		error_rc = RCREG;
 		NOP();
@@ -1789,6 +1790,7 @@ void Serial_Processing (void)
 {
     static uint8 state=0;
     memcpy(&KeyCmd.rsp,Recv_Buf,sizeof(KeyCmd.rsp));
+    dbg_hex(Recv_Buf, BUF_SIZE);
     if(0 == KeyCmd.req.dat[DAT_FUN_CMD])  //判断功能码 按键板是否在使用
     {
        key_state_update();
@@ -1804,6 +1806,7 @@ void Serial_Processing (void)
     delay_ms(5);
     send_dat(&KeyCmd.req, BUF_SIZE);
     KeyCmd.req.dat[DAT_FUN_CMD]=0;          //清功能码
+    //dbg_hex(Recv_Buf, BUF_SIZE);
     memset(&KeyCmd.rsp,0,sizeof(KeyCmd.rsp));
 }
 /*****************************************************************************
@@ -1825,6 +1828,7 @@ void Serial_Processing (void)
 void receiveHandler(uint8 ui8Data)
 {
     uint8 check_sum = 0;
+    static uint8 Recv_Len = 0;    // 接收长度
     static uint8 err_cnt= 0;
     Recv_Buf[Recv_Len] = ui8Data;
     if(Recv_Buf[0]==0x02)
@@ -1832,33 +1836,33 @@ void receiveHandler(uint8 ui8Data)
         Recv_Len++;
         if(Recv_Len >= BUF_SIZE) //接收到32byte的数据
         {
-             if((Recv_Buf[1]==0x03A)&&(Recv_Buf[2]==0x01))
-             {
-                 if((Recv_Buf[31]== 0x04)&&(Recv_Buf[30]== 0x0B))
-                 {
-                     for(uint8 i=2;i<(crc_len+2);i++)
-                     {
-                         check_sum^=Recv_Buf[i];
-                     }
-                     if(check_sum == Recv_Buf[29])
-                     //if(CRC8_SUM(&Recv_Buf[2], crc_len) == Recv_Buf[29])
-                     {
-                         Recv_Len = 0;
-                         frame_err=0;
-                         err_cnt=0;
-                         Flg.frame_ok_fag=1;
-                     }
-                     else
-                     {
-                          Recv_Len = 0;
-                          Flg.frame_ok_fag=0;
-                          err_cnt++;
-                          if( err_cnt>=10)
-                          {
+            if((Recv_Buf[1]==0x03A)&&(Recv_Buf[2]==0x01))
+            {
+                if((Recv_Buf[31]== 0x04)&&(Recv_Buf[30]== 0x0B))
+                {
+                    for(uint8 i=2;i<(crc_len+2);i++)
+                    {
+                        check_sum^=Recv_Buf[i];
+                    }
+                    if(check_sum == Recv_Buf[29])
+                    //if(CRC8_SUM(&Recv_Buf[2], crc_len) == Recv_Buf[29])
+                    {
+                        Recv_Len = 0;
+                        frame_err=0;
+                        err_cnt=0;
+                        Flg.frame_ok_fag=1;
+                    }
+                    else
+                    {
+                        Recv_Len = 0;
+                        Flg.frame_ok_fag=0;
+                        err_cnt++;
+                        if( err_cnt>=10)
+                        {
                             err_cnt=0;
                             frame_err=1;
-                          }
-                     }
+                        }
+                    }
                 }
                 else if((Recv_Buf[31]!= 0x04)||(Recv_Buf[30]!= 0x0B))  //结束码不对
                 {
