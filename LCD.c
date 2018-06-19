@@ -80,20 +80,31 @@ void led_scan(void)
 
 void show_tempture( uint16 data)//温度显示
 {
+    uint8 dat =0;
     digi_flg = 0;
     Flg.lcd_sleep_flg = 0;
     digiBuf[0] = data/100;
     digiBuf[1] = (data%100)/10;
-    digiBuf[2] = data%10;
+    dat = data%10;
+    if(dat<5)
+    {
+       digiBuf[2] = 0;
+    }
+    else
+    {
+       digiBuf[2] = 5;
+    }
 }
 
 void show_awaken()
 {
+    /*
     if(ShowPar.drain_state == ON)
     {
         LED_DRAIN_ON;
     }
-    show_tempture( ShowPar.temp_val);
+    */
+   //show_tempture( ShowPar.temp_val);
 }
 
 void show_lock ()//童锁显示
@@ -134,6 +145,14 @@ void show_clean() //清洁显示
     digiBuf[2] = 17;
 }
 
+void show_wifi_pair(uint8 bai,uint8 shi,uint8 ge) //wifi pair 显示 ---
+{
+    digi_flg = 1;
+    Flg.lcd_sleep_flg = 0;
+    digiBuf[0] = bai;
+    digiBuf[1] = shi;
+    digiBuf[2] = ge;
+}
 void show_adj_key(uint8 id,uint8 dat) //档位调节显示
 {
     digi_flg = 1;
@@ -176,7 +195,6 @@ void write_err_num(uint8 dat) //故障码显示
       {
           case ERR_F1:
               {
-                  //Flg.err_f1_flg =1;
                   digiBuf[0] = 12;//F
                   digiBuf[1] = 1; // 1
                   digiBuf[2] = 13;//

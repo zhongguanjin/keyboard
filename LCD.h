@@ -60,7 +60,7 @@ enum
 //∞¥º¸µ∆
 #define     LED_SFIO_OUT                        ( TRISF = 0 )
 
-#if  key_5
+#if  0//key_5
 #define     LED_TAP_OFF                         ( LATF5 = 0 )
 #define     LED_TAP_ON                          ( LATF5 = 1 )
 #define     LED_SHOWER_OFF                      ( LATF6 = 0 )
@@ -104,16 +104,16 @@ enum
 #define delay_ms(x) __delay_ms(x)
 
 
-extern void    show_tempture( uint16 data);
-extern void    LED_INIT();
-extern void    led_scan(void);
-extern void    show_lock ();
-extern void    show_state(uint8 state);
-extern void    show_sleep (uint8 dat);
-extern void    write_err_num(uint8 dat);
+extern void     show_tempture( uint16 data);
+extern void     LED_INIT();
+extern void     led_scan(void);
+extern void     show_lock ();
+extern void     show_state(uint8 state);
+extern void     show_sleep (uint8 dat);
+extern void     write_err_num(uint8 dat);
 extern void     show_adj_key(uint8 id,uint8 dat);
 extern void     show_clean(); //«ÂΩ‡œ‘ æ
-
-extern void show_awaken();
+extern void     show_wifi_pair(uint8 bai,uint8 shi,uint8 ge);
+extern void     show_awaken();
 
 #endif /* CAPT_APP_H_ */

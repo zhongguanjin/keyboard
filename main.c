@@ -4,7 +4,6 @@
 #include "system.h"
 #include "uart.h"
 
-
 /*****************************************************************************
  函 数 名  : Init_Sys
  功能描述  : 系统初始化函数
@@ -25,12 +24,11 @@ void Init_Sys(void)
 	Init_MCU();
     BSP_init();
 	Init_UART1();
+    //Init_UART2();
 	Init_TMR0();
-	//Init_TMR6();
 	GIE		= 1;
 	PEIE	= 1;
 	TMR0IE	= 1;				//开TMR0中断
-	//TMR6IE	= 1;				//开TMR6中断
 }
 
 /*****************************************************************************
@@ -56,7 +54,6 @@ void main(void)
         if(Flg.frame_ok_fag == 1)
         {
             Flg.frame_ok_fag = 0;
-            //delay_ms(10);
             Serial_Processing();
         }
         TaskProcess();            // 任务处理
@@ -81,19 +78,12 @@ void main(void)
 *****************************************************************************/
 void interrupt ISR(void)
 {
-/*
-	if (TMR6IF && TMR6IE) // 100us 中断一次
-	{
-	    TMR6IF = 0;
-        static uint8  led_count = 0;
-        led_count ++ ;
-        if(led_count>=2)
-        {
-            led_count = 0;
-            led_scan();
-        }
-	}
-	*/
+
+    if(RCIE && RCIF)
+    {
+        RCIF=0;
+        receiveHandler(RCREG);
+    }
     if(TMR0IF && TMR0IE)     // 1ms中断一次
     {
         TMR0IF = 0;
@@ -106,10 +96,5 @@ void interrupt ISR(void)
             led_scan();
         }
         TaskRemarks();       //任务标记轮询处理
-    }
-    if(RCIE && RCIF)
-    {
-        RCIF=0;
-        receiveHandler(RCREG);
     }
 }
