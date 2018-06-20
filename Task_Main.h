@@ -3,7 +3,7 @@
 
 #include "config.h"
 
-#define key_5  0
+#define key_5  1
 
 // 任务结构体：
 typedef struct _TASK_COMPONENTS
@@ -109,15 +109,14 @@ enum
 enum
 {
     FUN_IDLE =0,
-    FUN_1,
-    FUN_2,   // 2
-    FUN_3,
-    FUN_4,
-    FUN_5,     //5
-    FUN_6,  //6
-    FUN_7,      //7
-    FUN_8,      //8
-    FUN_MAX
+    FUN_1 = 0xf1,
+    FUN_2= 0xf2,
+    FUN_3= 0xf3,
+    FUN_4= 0xf4,
+    FUN_5= 0xf5,
+    FUN_6= 0xf6,
+    FUN_7= 0xf7,
+    FUN_8= 0xf8,
 };
 
 
