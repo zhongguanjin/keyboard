@@ -156,7 +156,6 @@ void console_process(void)
                             Recv_Buf[index]=ch;
                             Flg.frame_ok_fag=1;
                         }
-                        index = 0;
                         st=RX_START_ST;
                         break;
                     }

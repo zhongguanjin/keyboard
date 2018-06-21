@@ -54,7 +54,7 @@ typedef struct _TASK_COMPONENTS
 #define     BUF_SIZE   32
 #define     send_cnt   1
 #define     crc_len    (BUF_SIZE-5)
-uint8       Recv_Buf[BUF_SIZE];
+uint8       Recv_Buf[BUF_SIZE+8];
 
 uint8 Button_id = 0;   //°´¼üidºÅ
 uint8 frame_err=0;
