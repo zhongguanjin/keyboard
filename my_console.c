@@ -5,6 +5,7 @@
 
 #include "Task_Main.h"
 
+int uart1_getch(char * p);
 
 
 void uart_bufInit(uart_buf_t * pBuf)
@@ -45,102 +46,123 @@ int uart1_getch(char * p)
 void console_process(void)
 {
     uint8 ch;
-    uint8 check_sum = 0;
+    static uint8 check_sum = 0;
     static uint8 index=0;
-   // static uint8 state =0;
+    static uint8 st=0;
     while(1)
     {
         if(0 == uart1_getch(&ch))
         {
-            switch(index)
+            switch(st)
             {
-                case 0: //0x02
+                case RX_START_ST: //0x02
                 {
+                    index = 0;
                     if(ch != 0x02)
                     {
+                        st=RX_START_ST;
                         break;
                     }
+                    check_sum = 0;
                     Recv_Buf[index]=ch;
-                    index = 1;
+                    index++;
+                    st=RX_SPARE1_ST;
                     break;
                 }
-                case 1://0x3A
+                case RX_SPARE1_ST://0x3A
                 {
-                    if(ch != 0x3A)
+                    if(ch == 0x02) //≈≈÷ÿŒ Ã‚
                     {
-                        index = 0;
-                        break;
+                        index=0;
+                        Recv_Buf[index]=ch;
+                        index++;
+                        st=RX_SPARE1_ST;
                     }
-                    Recv_Buf[index]=ch;
-                    index = 2;
-                    break;
-                }
-                case 2://0x01
-                {
-                    if(ch !=0x01)
-                    {
-                        index = 0;
-                        break;
-                    }
-                    Recv_Buf[index]=ch;
-                    check_sum =ch;
-                    index = 3;
-                    break;
-                }
-                case 3: //dat
-                {
-                    if(index < BUF_SIZE)
+                    else if(ch == 0x3A)
                     {
                         Recv_Buf[index]=ch;
+                        index++;
+                        st=RX_SPARE2_ST;
                     }
+                    else
+                    {
+                       st=RX_START_ST;
+                    }
+                    break;
+                }
+                case RX_SPARE2_ST://0x01
+                {
+                    if(ch == 0x02)
+                    {
+                        index =0;
+                        Recv_Buf[index]=ch;
+                        index++;
+                        st=RX_SPARE1_ST;
+                    }
+                    else if(ch == 0x01)
+                    {
+                        check_sum =ch;
+                        Recv_Buf[index]=ch;
+                        index++;
+                        st=RX_DATA_ST;
+                    }
+                    else
+                    {
+                       st=RX_START_ST;
+                    }
+                    break;
+                }
+                case RX_DATA_ST: //dat
+                {
+                    Recv_Buf[index]=ch;
                     check_sum ^=ch;
                     index++;
-                    if(index == crc_len)
+                    if(index == 29)
                     {
-                        index =29;
+                        st =RX_CHK_ST;
                     }
                     break;
                 }
-                case 29: //check_sum
+                case RX_CHK_ST: //check_sum
                     {
-                        if(ch !=check_sum)
+                        if(ch ==check_sum)
                         {
-                            frame_err=1;
-                            index = 0;
-                            break;
+                            st=RX_END_ST;
+                            Recv_Buf[index]=ch;
+                            index++;
                         }
-                        Recv_Buf[index]=ch;
-                        index = 30;
+                        else
+                        {
+                           st=RX_START_ST;
+                        }
                         break;
                     }
-                case 30:
+                case RX_END_ST:
                     {
                         if(ch !=0x0B)
                         {
-                            frame_err=1;
-                            index = 0;
+                           st=RX_START_ST;
                             break;
                         }
                         Recv_Buf[index]=ch;
-                        index = 31;
+                        index++;
+                        st=RX_END_ST2;
                         break;
                     }
-                case 31:
+                case RX_END_ST2:
                     {
-                        if(ch !=04)
+                        if(ch ==04)
                         {
-                            frame_err=1;
-                            index = 0;
-                            break;
+                            Recv_Buf[index]=ch;
+                            Flg.frame_ok_fag=1;
                         }
-                        Recv_Buf[index]=ch;
-                        frame_err=0;
-                        Flg.frame_ok_fag=1;
                         index = 0;
+                        st=RX_START_ST;
                         break;
                     }
                 default:
                     index = 0;
+                    st=RX_START_ST;
                     break;
             }
 
@@ -153,6 +175,10 @@ void console_process(void)
 }
 
 
+void my_console_receive(uint8 ui8Data)
+{
+     uart1rx.buf[uart1rx.in++&CONSOLE_RX_BUF_MASK] =ui8Data;
+}
 
 
 

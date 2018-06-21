@@ -1832,7 +1832,7 @@ void receiveHandler(uint8 ui8Data)
         Recv_Len++;
         if(Recv_Len >= BUF_SIZE) //接收到32byte的数据
         {
-             if((Recv_Buf[1]==0x03A)&&(Recv_Buf[2]==0x01))
+             if((Recv_Buf[1]==0x3A)&&(Recv_Buf[2]==0x01))
              {
                  if((Recv_Buf[31]== 0x04)&&(Recv_Buf[30]== 0x0B))
                  {
@@ -1872,7 +1872,7 @@ void receiveHandler(uint8 ui8Data)
                     Flg.frame_ok_fag = 0;
                 }
             }
-            else if((Recv_Buf[1]!=0x03A)||(Recv_Buf[2]!=0x01)) //
+            else if((Recv_Buf[1]!=0x3A)||(Recv_Buf[2]!=0x01)) //
             {
                 Recv_Len = 0;
                 Flg.frame_ok_fag = 0;

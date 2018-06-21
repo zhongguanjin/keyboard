@@ -20,11 +20,17 @@ typedef struct _UART_BUF_TAG
 
 uart_buf_t		uart1rx;
 
+#define RX_START_ST		0
+#define RX_SPARE1_ST	1
+#define RX_SPARE2_ST	2
+#define RX_DATA_ST		3
+#define RX_CHK_ST			4
+#define RX_END_ST			5
+#define RX_END_ST2			6
 
 extern void console_process(void);
-void uart_bufInit(uart_buf_t * pBuf);
-int uart1_getch(char * p);
-
+extern void uart_bufInit(uart_buf_t * pBuf);
+extern void my_console_receive(uint8 ui8Data);
 
 
 #endif
