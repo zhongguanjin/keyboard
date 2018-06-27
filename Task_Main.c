@@ -150,7 +150,7 @@ void TaskShow(void) //100ms
     修改内容   : 新生成函数
 
 *****************************************************************************/
-void TaskClean()
+void TaskClean() //100ms
 {
     switch ( clean_state )
     {
@@ -169,7 +169,7 @@ void TaskClean()
         case STATE_2 :
             {
                 static uint16 state2_time = 0;
-                if((state2_time++)==1800)// 3min
+                if((state2_time++)==600)// 1min
                 {
                     state2_time = 0;
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
@@ -181,9 +181,9 @@ void TaskClean()
         case STATE_3 :
             {
                 static uint16 state3_time = 0;
-                if((KeyCmd.req.dat[DAT_LIQUID]&0x01)!=0x01) //低于低液位
+                //if((KeyCmd.req.dat[DAT_LIQUID]&0x01)!=0x01) //低于低液位
                 {
-                    if((state3_time++)==4800)  //8min
+                    if((state3_time++)==3600)  //6min
                     {
                         state3_time = 0;
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
@@ -196,9 +196,9 @@ void TaskClean()
         case STATE_4 :
             {
                 static uint16 state4_time = 0;
-                if((KeyCmd.req.dat[DAT_LIQUID]&0x01)==0x01) //高于低液位
+                //if((KeyCmd.req.dat[DAT_LIQUID]&0x01)==0x01) //高于低液位
                 {
-                    if((state4_time++)==10)  // 1s
+                    if((state4_time++)==600)  // 1min
                     {
                         state4_time = 0;
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
@@ -211,19 +211,41 @@ void TaskClean()
         case STATE_5 :
             {
                 static uint16 state5_time = 0;
-                if((state5_time++)==1200)// 2min
+                if((state5_time++)==3600)// 6min
                 {
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
                     KeyCmd.req.dat[DAT_VALVE] = 0x05;
+                    clean_state = STATE_6;
                 }
-                if(state5_time ==1220)
+            }
+             break;
+        case STATE_6 :
+            {
+                static uint16 state5_time = 0;
+                if((state5_time++)==600)// 1min
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x06;
+                    clean_state = STATE_7;
+                }
+            }
+             break;
+        case STATE_7 :
+            {
+                static uint16 state5_time = 0;
+                if((state5_time++)==3600)// 6min
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x07;
+                }
+                if(state5_time ==3620) // 6min2s后
                 {
                     state5_time = 0;
-                    work_state =WORK_STATE_IDLE;
                     KeyCmd.req.dat[DAT_FUN_CMD] = FUN_CLEAN; //功能码
                     KeyCmd.req.dat[DAT_VALVE] =0x00;
                     show_tempture(ShowPar.temp_val);
                     clean_state = STATE_0;
+                    work_state =WORK_STATE_IDLE;
                 }
             }
             break;
