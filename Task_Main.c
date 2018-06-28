@@ -118,7 +118,7 @@ void TaskShow(void) //100ms
        }
        else
        {
-            static uint8 cnt =0;
+            static uint8 cnt =0,flash_cnt=0;
             if((cnt%10)==5)
             {
                show_sleep(OFF);
@@ -126,10 +126,17 @@ void TaskShow(void) //100ms
             if((cnt%10)==9)
             {
                 show_clean();
+                flash_cnt++;
             }
             if((cnt++)>=100)
             {
                 cnt=0;
+            }
+            if(flash_cnt>=3)
+            {
+               flash_cnt=0;
+               show_tempture(ShowPar.temp_val);
+               work_state =  WORK_STATE_IDLE;
             }
        }
     }
@@ -213,6 +220,7 @@ void TaskClean() //100ms
                 static uint16 state5_time = 0;
                 if((state5_time++)==3600)// 6min
                 {
+                    state5_time = 0;
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
                     KeyCmd.req.dat[DAT_VALVE] = 0x05;
                     clean_state = STATE_6;
@@ -221,9 +229,10 @@ void TaskClean() //100ms
              break;
         case STATE_6 :
             {
-                static uint16 state5_time = 0;
-                if((state5_time++)==600)// 1min
+                static uint16 state6_time = 0;
+                if((state6_time++)==600)// 1min
                 {
+                    state6_time = 0;
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
                     KeyCmd.req.dat[DAT_VALVE] = 0x06;
                     clean_state = STATE_7;
@@ -232,15 +241,15 @@ void TaskClean() //100ms
              break;
         case STATE_7 :
             {
-                static uint16 state5_time = 0;
-                if((state5_time++)==3600)// 6min
+                static uint16 state7_time = 0;
+                if((state7_time++)==3600)// 6min
                 {
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
                     KeyCmd.req.dat[DAT_VALVE] = 0x07;
                 }
-                if(state5_time ==3620) // 6min2s后
+                if(state7_time ==3620) // 6min2s后
                 {
-                    state5_time = 0;
+                    state7_time = 0;
                     KeyCmd.req.dat[DAT_FUN_CMD] = FUN_CLEAN; //功能码
                     KeyCmd.req.dat[DAT_VALVE] =0x00;
                     show_tempture(ShowPar.temp_val);
