@@ -3,6 +3,7 @@
 #include "timer.h"
 #include "system.h"
 #include "uart.h"
+#include "my_console.h"
 
 
 /*****************************************************************************
@@ -51,8 +52,10 @@ void Init_Sys(void)
 void main(void)
 {
 	Init_Sys();
+	uart_bufInit(&uart1rx);
 	while(1)
 	{
+	    console_process();
         if(Flg.frame_ok_fag == 1)
         {
             Flg.frame_ok_fag = 0;
@@ -110,6 +113,7 @@ void interrupt ISR(void)
     if(RCIE && RCIF)
     {
         RCIF=0;
-        receiveHandler(RCREG);
+        //receiveHandler(RCREG);
+        my_console_receive(RCREG);
     }
 }
