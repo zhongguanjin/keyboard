@@ -35,6 +35,7 @@ static uint8 key_arry[SIZE]; //按键堆栈数组
 static int top = 0;
 static uint16 time_clean=0;
 uint8 clean_state;        //clean 步骤
+static uint16 Cstate_time =0;
 static uint8 err_lock=0;
 
 //函数申明
@@ -163,10 +164,9 @@ void TaskClean() //100ms
     {
         case STATE_1:
             {
-                static uint16 state1_time = 0;
-                if((state1_time++)==10)  // 1s 后发送
+                if((Cstate_time++)==10)  // 1s 后发送
                 {
-                    state1_time = 0;
+                    Cstate_time = 0;
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
                     KeyCmd.req.dat[DAT_VALVE] = 0x01;
                     clean_state = STATE_2;
@@ -175,10 +175,9 @@ void TaskClean() //100ms
             break;
         case STATE_2 :
             {
-                static uint16 state2_time = 0;
-                if((state2_time++)==600)// 1min
+                if((Cstate_time++)==600)// 1min
                 {
-                    state2_time = 0;
+                    Cstate_time = 0;
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
                     KeyCmd.req.dat[DAT_VALVE] = 0x02;
                     clean_state = STATE_3;
@@ -187,12 +186,11 @@ void TaskClean() //100ms
             break;
         case STATE_3 :
             {
-                static uint16 state3_time = 0;
                 //if((KeyCmd.req.dat[DAT_LIQUID]&0x01)!=0x01) //低于低液位
                 {
-                    if((state3_time++)==3600)  //6min
+                    if((Cstate_time++)==3600)  //6min
                     {
-                        state3_time = 0;
+                        Cstate_time = 0;
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
                         KeyCmd.req.dat[DAT_VALVE] = 0x03;
                         clean_state = STATE_4;
@@ -202,12 +200,11 @@ void TaskClean() //100ms
             break;
         case STATE_4 :
             {
-                static uint16 state4_time = 0;
                 //if((KeyCmd.req.dat[DAT_LIQUID]&0x01)==0x01) //高于低液位
                 {
-                    if((state4_time++)==600)  // 1min
+                    if((Cstate_time++)==600)  // 1min
                     {
-                        state4_time = 0;
+                        Cstate_time = 0;
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
                         KeyCmd.req.dat[DAT_VALVE] = 0x04;
                         clean_state = STATE_5;
@@ -217,10 +214,9 @@ void TaskClean() //100ms
             break;
         case STATE_5 :
             {
-                static uint16 state5_time = 0;
-                if((state5_time++)==3600)// 6min
+                if((Cstate_time++)==3600)// 6min
                 {
-                    state5_time = 0;
+                    Cstate_time = 0;
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
                     KeyCmd.req.dat[DAT_VALVE] = 0x05;
                     clean_state = STATE_6;
@@ -229,10 +225,9 @@ void TaskClean() //100ms
              break;
         case STATE_6 :
             {
-                static uint16 state6_time = 0;
-                if((state6_time++)==600)// 1min
+                if((Cstate_time++)==600)// 1min
                 {
-                    state6_time = 0;
+                    Cstate_time = 0;
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
                     KeyCmd.req.dat[DAT_VALVE] = 0x06;
                     clean_state = STATE_7;
@@ -241,15 +236,14 @@ void TaskClean() //100ms
              break;
         case STATE_7 :
             {
-                static uint16 state7_time = 0;
-                if((state7_time++)==3600)// 6min
+                if((Cstate_time++)==3600)// 6min
                 {
                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
                     KeyCmd.req.dat[DAT_VALVE] = 0x07;
                 }
-                if(state7_time ==3620) // 6min2s后
+                if(Cstate_time ==3620) // 6min2s后
                 {
-                    state7_time = 0;
+                    Cstate_time = 0;
                     KeyCmd.req.dat[DAT_FUN_CMD] = FUN_CLEAN; //功能码
                     KeyCmd.req.dat[DAT_VALVE] =0x00;
                     show_tempture(ShowPar.temp_val);
@@ -1053,6 +1047,7 @@ void WATER_EventHandler(void)
     		work_state =WORK_STATE_IDLE;
     		KeyCmd.req.dat[DAT_FUN_CMD] = FUN_CLEAN; //功能码
     		KeyCmd.req.dat[DAT_VALVE] =0x00;
+            Cstate_time = 0;
     		show_tempture(ShowPar.temp_val);
             clean_state = STATE_0;
     		dbg("clean cancel\r\n");
