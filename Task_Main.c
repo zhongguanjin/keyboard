@@ -37,7 +37,9 @@ static int top = 0;
 uint8 work_mode;        //test 步骤
 uint16 test_cnt;        //test 次数
 uint8 buf_cnt[2];       //
-static uint16 time_test =0;
+static uint16 time_test =0;     //按键时间变量
+static uint16 Tstate_time = 0;  //测试状态时间变量
+
 /* END:   Added by zgj, 2018/1/19 */
 
 static uint16 time_clean=0;
@@ -312,21 +314,15 @@ uint8 EepromReadByte(uint8 addr)
 
 *****************************************************************************/
 /*
-1，开启下水器，8秒后开启花洒进水
-2，2秒后将目标温度设定为15℃
-3，15秒后将目标温度设定为43℃
-4，2秒后切换为浴缸进水（下水器要默认关闭）
-5，当低液位传感器感应到水位后（浴缸进水默认关闭，循环加热默认开启），2秒后启动气按摩，1s后开启浴缸进水
-6,当高液位传感器感应到水位后（浴缸进水默认关闭）3秒后发送开启浴缸进水命令、再3S后发送花洒进水命令
-7，6S后关闭气按摩，启动水按摩。
-8，2秒后水按摩、气按摩同时开启。
-9，6S后关闭水按摩、气按摩，
-10，1s后水底灯开启（默认5秒循环变色），30秒后发射定色命令，
-11，30s以2秒/次的速度连续发射7次加大命令，
-12，8秒后以2秒/次的速度连续发射7次减小命令
-13，2秒后关闭水底灯，
-14，2s后开启下水器
-15,（低液位无水时默认关闭循环加热），此时发送水按摩命令、气按摩命令。
+开启:按灯光键5s进入测试模式
+关闭:按灯光键5s退出测试模式
+查看测试次数:在测试模式下，按灯光键会显示次数,2s后显示进水温度。
+1，2s后将目标温度设定为43℃
+2，6s秒后开龙头,3s后关闭，3s后开启，3s后关闭
+3，1s后开花洒， 3s后关闭，3s后开启，3s后关闭
+4，1s后将目标温度设定为28℃
+5，5s秒后开龙头,3s后关闭，
+6，1s后开花洒， 3s后关闭，
 */
 void TaskKeyTest(void) //100ms
 {
@@ -334,268 +330,124 @@ void TaskKeyTest(void) //100ms
     {
         case STATE_1:
             {
-                static uint8 time1 =0;
-                if((time1++) == 20)// 2s
+                if((Tstate_time++)==20)// 2s后将目标温度设定为43℃
                 {
-                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE;
-                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
-                }
-                if(time1==80)//8s时间到
-                {
-                    time1 = 0;
-                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
-                    KeyCmd.req.dat[DAT_VALVE] = 0x02;
-                    ShowPar.shower_state =ON;
+                    Tstate_time = 0;
+                    ShowPar.temp_val =430;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_TEMP; // 温度变化
+                    KeyCmd.req.dat[DAT_VALVE]=0x00;
+                    KeyCmd.req.dat[DAT_TEMP_H] = (uint8)(ShowPar.temp_val >> 8);            // 温度高
+                    KeyCmd.req.dat[DAT_TEMP_L] = (uint8)ShowPar.temp_val;                 // 温度低
+                    show_tempture(ShowPar.temp_val);
                     work_mode = STATE_2;
                 }
                 break;
             }
         case STATE_2:
             {
-
-                static uint8 time2=0;
-                if((time2++)==20)// 2s时间到
+                if((Tstate_time++)==60)// 6s时间到  open tap
                 {
-                    time2 = 0;
-                    ShowPar.temp_val =150;
-                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_TEMP; // 温度变化
-                    KeyCmd.req.dat[DAT_VALVE]=0x00;
-                    KeyCmd.req.dat[DAT_TEMP_H] = (uint8)(ShowPar.temp_val >> 8);            // 温度高
-                    KeyCmd.req.dat[DAT_TEMP_L] = (uint8)ShowPar.temp_val;                 // 温度低
-                    show_tempture(ShowPar.temp_val);
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
+                }
+                if(Tstate_time ==90)// 3s时间到  close tap
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x00;
+                }
+                if(Tstate_time==120)// 3s时间到  open tap
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
+                }
+                if(Tstate_time==150)// 3s时间到  close tap
+                {
+                    Tstate_time=0;
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x00;
                     work_mode = STATE_3;
                 }
                 break;
             }
         case STATE_3:
             {
-                static uint8 time3=0;
-                if((time3++)==150)// 15s时间到
+                if((Tstate_time++)==10)// 1s时间到  open shower
                 {
-                    time3 = 0;
-                    ShowPar.temp_val =430;
-                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_TEMP; //温度变化
-                    KeyCmd.req.dat[DAT_VALVE]=0x00;
-                    KeyCmd.req.dat[DAT_TEMP_H] = (uint8)(ShowPar.temp_val >> 8);            // 温度高
-                    KeyCmd.req.dat[DAT_TEMP_L] = (uint8)ShowPar.temp_val;
-                    show_tempture(ShowPar.temp_val);
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x02;
+                }
+                if(Tstate_time==40)// 3s时间到  close shower
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x00;
+                }
+                if(Tstate_time==70)// 3s时间到  open shower
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x02;
+                }
+                if(Tstate_time==100)// 3s时间到  close shower
+                {
+                    Tstate_time=0;
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x00;
                     work_mode = STATE_4;
                 }
                 break;
             }
         case STATE_4:
             {
-                static uint8 time4=0;
-                if((time4++)==30)// 3s时间到
+                if((Tstate_time++)==10)// 1s后将目标温度设定为28℃
                 {
-                    time4 = 0;
-                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;  // 功能码：进水开关改变
-                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
+                    Tstate_time = 0;
+                    ShowPar.temp_val =280;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_TEMP; // 温度变化
+                    KeyCmd.req.dat[DAT_VALVE]=0x00;
+                    KeyCmd.req.dat[DAT_TEMP_H] = (uint8)(ShowPar.temp_val >> 8);            // 温度高
+                    KeyCmd.req.dat[DAT_TEMP_L] = (uint8)ShowPar.temp_val;                 // 温度低
+                    show_tempture(ShowPar.temp_val);
                     work_mode = STATE_5;
                 }
+
                 break;
             }
         case STATE_5:
             {
-                 static uint8 time5=0;
-                 //if(1)
-                 if((KeyCmd.req.dat[DAT_LIQUID]&0x01) == 0x01)
-                 {
-                     //show_tempture(test_cnt);
-                     if((time5++) == 50)// 5s时间到
-                     {
-                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
-                        KeyCmd.req.dat[DAT_VALVE] =(0X02|0x6c); //气按摩
-                     }
-                     if((time5) == 80)// 8s时间到
-                     {
-                          time5 = 0;
-                          KeyCmd.req.dat[DAT_FUN_CMD] =FUN_INFLOW;//进水通道切换
-                          KeyCmd.req.dat[DAT_VALVE] =0x01;  //龙头
-                          work_mode = STATE_6;
-                     }
-                 }
+                if((Tstate_time++)==50)// 5s时间到  open tap
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
+                }
+                if(Tstate_time==80)// 3s时间到  close tap
+                {
+                    Tstate_time = 0;
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x00;
+                    work_mode = STATE_6;
+                }
                 break;
             }
         case STATE_6:
             {
-                //static uint8 time6 = 0;
-                //if(1)
-                if((KeyCmd.req.dat[DAT_LIQUID]&0x02) == 0x02)  // 判断高液位
+                if((Tstate_time++)==10)// 1s时间到  open shower
                 {
-                /*
-                    if((time6++) == 30) // 3s时间到
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x02;
+                }
+                if(Tstate_time==40)// 3s时间到  close tap
+                {
+                    Tstate_time = 0;
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x00;
+                    if((test_cnt++)>999)
                     {
-                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_INFLOW; //进水通道切换
-                        KeyCmd.req.dat[DAT_VALVE] =0x01;
+                      test_cnt = 0;
                     }
-                    if(time6 == 60) // 3s
-                    {
-                        time6 = 0;
-                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_INFLOW; //进水通道切换
-                        KeyCmd.req.dat[DAT_VALVE] =0x02;
-                        work_mode = STATE_7;
-                    }
-                    */
-                    work_mode = STATE_7;
-                }
-                break;
-            }
-        case STATE_7:
-            {
-                static uint8 time7=0;
-                if((time7++)==60)// 6s时间到
-                {
-                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
-                    KeyCmd.req.dat[DAT_VALVE] =(0X00|0x6c); //关闭气按摩
-
-                }
-                if(time7 == 90)
-                {
-                  time7 = 0;
-                  KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
-                  KeyCmd.req.dat[DAT_VALVE] =(0X01|0x6c); //开水按摩
-                  work_mode = STATE_8;
-                }
-                break;
-            }
-        case STATE_8:
-            {
-                static uint8 time8=0;
-                if((time8++)==50)// 5s时间到
-                {
-                    time8 = 0;
-                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
-                    KeyCmd.req.dat[DAT_VALVE] =(0X03|0x6c); //水和气按摩
-                    work_mode = STATE_9;
-
-                }
-                break;
-            }
-        case STATE_9:
-            {
-                static uint8 time9=0;
-                if((time9++)==60)// 6s时间到
-                {
-                    time9 = 0;
-                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
-                    KeyCmd.req.dat[DAT_VALVE] =(0X00|0x6c); //水和气按摩
-                    work_mode = STATE_10;
-                }
-                break;
-            }
-        case STATE_10:
-            {
-                static uint8 time10=0;
-                if((time10++)==30)// 3s时间到
-                {
-                    time10 = 0;
-                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT; //灯光功能
-                    KeyCmd.req.dat[DAT_VALVE] =0x08; //循环变色
-                    work_mode = STATE_11;
-                }
-                break;
-            }
-        case STATE_11:
-            {
-                static uint16 time11=0;
-                if((time11++)>=300)// 8s时间到
-                {
-                    static uint8 color=1;
-                    static uint8 time11_1 = 1;
-                    if(((time11_1++)%21)==0)
-                    {
-                        time11_1=1;
-                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT; //灯光功能
-                        KeyCmd.req.dat[DAT_VALVE] = color; //循环变色
-                        color++;
-                    }
-                    if(color >7)
-                    {
-                        time11 = 0;
-                        color=1;
-                        work_mode = STATE_12;
-                    }
-                }
-                break;
-            }
-
-        case STATE_12:
-            {
-                static uint8 time12=0;
-                if((time12++)>=30)// 3s时间到
-                {
-                    static uint8 color=6;
-                    static uint8 time12_1 =1;
-                    if(((time12_1++)%21)==0)
-                    {
-                        time12_1 =1;
-                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT; //灯光功能
-                        KeyCmd.req.dat[DAT_VALVE] = color; //循环变色
-                        color--;
-                    }
-                    if(color <1)
-                    {
-                        time12=0;
-                        color=6;
-                        work_mode = STATE_13;
-                    }
-
-                }
-
-                break;
-            }
-        case STATE_13:
-            {
-                static uint8 time13=0;
-                if((time13++)==30)// 3s时间到
-                {
-                    time13 = 0;
-                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT; //灯光功能
-                    KeyCmd.req.dat[DAT_VALVE] = 0; //off
-                    work_mode = STATE_14;
-                }
-                break;
-            }
-        case STATE_14:
-            {
-                static uint8 time14=0;
-                if((time14++)==30)// 3s时间到
-                {
-                    time14 = 0;
-                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE; //排水功能
-                    KeyCmd.req.dat[DAT_VALVE] =0x01;
-                    work_mode = STATE_15;
-                }
-                break;
-            }
-        case STATE_15:
-            {
-                static uint8 time15=0;
-                //if(1)
-                if((KeyCmd.req.dat[DAT_LIQUID]&0x01) == 0)  // 判断低液位
-                {
-                    if((time15++)==30)  // 3s时间到
-                    {
-                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
-                        KeyCmd.req.dat[DAT_VALVE] =(0X03|0x6c); //水,气按摩
-                    }
-                    if(time15==60) // 6s
-                    {
-                        time15 = 0;
-                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE; //按摩功能
-                        KeyCmd.req.dat[DAT_VALVE] =(0X00|0x6c); //关闭
-                        if((test_cnt++)>999)
-                        {
-                          test_cnt = 0;
-                        }
-                        //show_tempture(test_cnt);
-                        buf_cnt[0]= (test_cnt&0xFF00)>>8;       //高八位
-                        buf_cnt[1]= test_cnt&0x00FF;
-                        EepromWriteByte(eeprom_addr, buf_cnt[0]);
-                        EepromWriteByte(eeprom_addr+0x01, buf_cnt[1]);
-                        work_mode = STATE_1;
-                    }
+                    buf_cnt[0]= (test_cnt&0xFF00)>>8;       //高八位
+                    buf_cnt[1]= test_cnt&0x00FF;
+                    EepromWriteByte(eeprom_addr, buf_cnt[0]);
+                    EepromWriteByte(eeprom_addr+0x01, buf_cnt[1]);
+                    work_mode = STATE_1;
                 }
                 break;
             }
@@ -1482,12 +1334,17 @@ void LAMP_EventHandler(void)
                    }
                }
             }
-            KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:06
+            KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:08
             dbg("lamp %x\r\n", KeyCmd.req.dat[DAT_VALVE]);
         }
         else if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S
         {
             time_test = 0;
+            LED_LAMP_OFF;
+            KeyCmd.req.dat[DAT_VALVE] = LAMP_OFF;
+            // ShowPar.lamp_gear = LAMP_OFF;
+            del(LAMP_VALVE);
+            KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:08
             work_state = WORK_STATE_TEST;
             work_mode = STATE_1;
             test_cnt = ((EepromReadByte(eeprom_addr)&0x00ff)<<8)+(EepromReadByte(eeprom_addr+0x01)&0x00ff);
@@ -1502,9 +1359,10 @@ void LAMP_EventHandler(void)
             show_tempture( test_cnt);
             ShowPar.switch_flg = STATE_ON;
         }
-        else if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S
+        else if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S  取消测试
         {
             time_test = 0;
+            Tstate_time = 0;
             show_tempture( ShowPar.temp_val);
             work_state = WORK_STATE_IDLE;
         }
