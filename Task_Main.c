@@ -338,7 +338,7 @@ void TaskKeyTest(void) //100ms
                     KeyCmd.req.dat[DAT_VALVE]=0x00;
                     KeyCmd.req.dat[DAT_TEMP_H] = (uint8)(ShowPar.temp_val >> 8);            // 温度高
                     KeyCmd.req.dat[DAT_TEMP_L] = (uint8)ShowPar.temp_val;                 // 温度低
-                    show_tempture(ShowPar.temp_val);
+                    //show_tempture(ShowPar.temp_val);
                     work_mode = STATE_2;
                 }
                 break;
@@ -405,7 +405,7 @@ void TaskKeyTest(void) //100ms
                     KeyCmd.req.dat[DAT_VALVE]=0x00;
                     KeyCmd.req.dat[DAT_TEMP_H] = (uint8)(ShowPar.temp_val >> 8);            // 温度高
                     KeyCmd.req.dat[DAT_TEMP_L] = (uint8)ShowPar.temp_val;                 // 温度低
-                    show_tempture(ShowPar.temp_val);
+                    //show_tempture(ShowPar.temp_val);
                     work_mode = STATE_5;
                 }
 
@@ -443,6 +443,7 @@ void TaskKeyTest(void) //100ms
                     {
                       test_cnt = 0;
                     }
+                    show_tempture( test_cnt);
                     buf_cnt[0]= (test_cnt&0xFF00)>>8;       //高八位
                     buf_cnt[1]= test_cnt&0x00FF;
                     EepromWriteByte(eeprom_addr, buf_cnt[0]);
@@ -1295,6 +1296,7 @@ void LAMP_EventHandler(void)
 {
     if(work_state == WORK_STATE_IDLE)
     {
+        /*
         if(KeyPressDown&LAMP_VALVE)
         {
             time_test = 0;
@@ -1337,32 +1339,32 @@ void LAMP_EventHandler(void)
             KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:08
             dbg("lamp %x\r\n", KeyCmd.req.dat[DAT_VALVE]);
         }
-        else if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S
+        */
+        if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S
         {
             time_test = 0;
-            LED_LAMP_OFF;
-            KeyCmd.req.dat[DAT_VALVE] = LAMP_OFF;
-            // ShowPar.lamp_gear = LAMP_OFF;
-            del(LAMP_VALVE);
-            KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:08
+            LED_LAMP_ON;
             work_state = WORK_STATE_TEST;
             work_mode = STATE_1;
             test_cnt = ((EepromReadByte(eeprom_addr)&0x00ff)<<8)+(EepromReadByte(eeprom_addr+0x01)&0x00ff);
-            show_tempture( test_cnt);
+            show_tempture(test_cnt);
         }
     }
     else if(work_state == WORK_STATE_TEST)
     {
+    /*
         if(KeyPressDown&LAMP_VALVE)
         {
             KeyPressDown = 0;
             show_tempture( test_cnt);
             ShowPar.switch_flg = STATE_ON;
         }
-        else if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S  取消测试
+        */
+        if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S  取消测试
         {
             time_test = 0;
             Tstate_time = 0;
+            LED_LAMP_OFF;
             show_tempture( ShowPar.temp_val);
             work_state = WORK_STATE_IDLE;
         }
