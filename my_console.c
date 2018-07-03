@@ -90,7 +90,7 @@ void console_process(void)
                     }
                     break;
                 }
-                case RX_SPARE2_ST://0x01
+                case RX_SPARE2_ST://0x04
                 {
                     if(ch == 0x02)
                     {
@@ -99,7 +99,7 @@ void console_process(void)
                         index++;
                         st=RX_SPARE1_ST;
                     }
-                    else if(ch == 0x01)
+                    else if(ch == 0x04)
                     {
                         check_sum =ch;
                         Recv_Buf[index]=ch;
@@ -139,7 +139,7 @@ void console_process(void)
                     }
                 case RX_END_ST:
                     {
-                        if(ch !=0x0B)
+                        if(ch !=0x0F)
                         {
                            st=RX_START_ST;
                             break;

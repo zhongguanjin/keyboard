@@ -39,7 +39,7 @@ uint16 test_cnt;        //test 次数
 uint8 buf_cnt[2];       //
 static uint16 time_test =0;     //按键时间变量
 static uint16 Tstate_time = 0;  //测试状态时间变量
-
+void  send_to_slave(void);
 /* END:   Added by zgj, 2018/1/19 */
 
 static uint16 time_clean=0;
@@ -111,6 +111,7 @@ typedef enum _TASK_LIST
 *****************************************************************************/
 void TaskShow(void) //100ms
 {
+    send_to_slave();
     show_work();
     show_temp_flash();
     if(key_switch_fag ==0)
@@ -125,6 +126,7 @@ void TaskShow(void) //100ms
     {
        TaskClean();
     }
+
 }
 
 /*****************************************************************************
@@ -298,6 +300,13 @@ uint8 EepromReadByte(uint8 addr)
 
 }
 
+void send_to_slave(void)
+{
+    KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
+    send_dat(&KeyCmd.req, BUF_SIZE);
+    KeyCmd.req.dat[DAT_FUN_CMD]=0;          //清功能码
+}
+
 /*****************************************************************************
  函 数 名  : TaskKeyTest
  功能描述  : 寿命测试程序函数
@@ -314,15 +323,17 @@ uint8 EepromReadByte(uint8 addr)
 
 *****************************************************************************/
 /*
+
 开启:按灯光键5s进入测试模式
 关闭:按灯光键5s退出测试模式
-查看测试次数:在测试模式下，按灯光键会显示次数,2s后显示进水温度。
-1，2s后将目标温度设定为43℃
-2，6s秒后开龙头,3s后关闭，3s后开启，3s后关闭
-3，1s后开花洒， 3s后关闭，3s后开启，3s后关闭
-4，1s后将目标温度设定为28℃
-5，5s秒后开龙头,3s后关闭，
-6，1s后开花洒， 3s后关闭，
+测试次数最大显示999，超过清0重新计数
+
+1，2s后开启水按摩，1min后关闭水按摩。
+2，2s后开启气按摩，1min后关闭气按摩。
+3，2s后开启水按摩，2s后开启气按摩，1min后关闭水按摩，1min后关闭气按摩
+4，2s后开启管道清洁功能。1nin后关闭管道清洁功能。
+5，2s后开启下水器，20s后关闭下水器，返回第1步循环，
+
 */
 void TaskKeyTest(void) //100ms
 {
@@ -330,114 +341,102 @@ void TaskKeyTest(void) //100ms
     {
         case STATE_1:
             {
-                if((Tstate_time++)==20)// 2s后将目标温度设定为43℃
+                if((Tstate_time++)==20)// 2s后开启水按摩
                 {
-                    Tstate_time = 0;
-                    ShowPar.temp_val =430;
-                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_TEMP; // 温度变化
-                    KeyCmd.req.dat[DAT_VALVE]=0x00;
-                    KeyCmd.req.dat[DAT_TEMP_H] = (uint8)(ShowPar.temp_val >> 8);            // 温度高
-                    KeyCmd.req.dat[DAT_TEMP_L] = (uint8)ShowPar.temp_val;                 // 温度低
-                    //show_tempture(ShowPar.temp_val);
-                    work_mode = STATE_2;
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                    KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                            +(ShowPar.air_gear<<5)+0x01;
+                }
+                if(Tstate_time == 620)//  1min
+                {
+                     Tstate_time = 0;
+                     KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                     KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                             +(ShowPar.air_gear<<5)+0x00;
+                     work_mode = STATE_2;
                 }
                 break;
             }
         case STATE_2:
             {
-                if((Tstate_time++)==60)// 6s时间到  open tap
+                if((Tstate_time++)==20)// 2s后开启气按摩
                 {
-                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
-                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                    KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                            +(ShowPar.air_gear<<5)+0x02;
                 }
-                if(Tstate_time ==90)// 3s时间到  close tap
+                if(Tstate_time == 620)//  1min
                 {
-                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
-                    KeyCmd.req.dat[DAT_VALVE] = 0x00;
-                }
-                if(Tstate_time==120)// 3s时间到  open tap
-                {
-                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
-                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
-                }
-                if(Tstate_time==150)// 3s时间到  close tap
-                {
-                    Tstate_time=0;
-                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
-                    KeyCmd.req.dat[DAT_VALVE] = 0x00;
-                    work_mode = STATE_3;
+                     Tstate_time = 0;
+                     KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                     KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                             +(ShowPar.air_gear<<5)+0x00;
+                     work_mode = STATE_3;
                 }
                 break;
             }
         case STATE_3:
             {
-                if((Tstate_time++)==10)// 1s时间到  open shower
+                if((Tstate_time++)==20)//
                 {
-                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
-                    KeyCmd.req.dat[DAT_VALVE] = 0x02;
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                    KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                            +(ShowPar.air_gear<<5)+0x01;
                 }
-                if(Tstate_time==40)// 3s时间到  close shower
+                if(Tstate_time == 40)//  2s
                 {
-                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
-                    KeyCmd.req.dat[DAT_VALVE] = 0x00;
+                     KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                     KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                             +(ShowPar.air_gear<<5)+0x03;
                 }
-                if(Tstate_time==70)// 3s时间到  open shower
+                if(Tstate_time == 640)// 1min
                 {
-                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
-                    KeyCmd.req.dat[DAT_VALVE] = 0x02;
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                    KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                            +(ShowPar.air_gear<<5)+0x02;
                 }
-                if(Tstate_time==100)// 3s时间到  close shower
+                if(Tstate_time == 1240)//  1min
                 {
-                    Tstate_time=0;
-                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
-                    KeyCmd.req.dat[DAT_VALVE] = 0x00;
-                    work_mode = STATE_4;
+                     Tstate_time = 0;
+                     KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                     KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
+                             +(ShowPar.air_gear<<5)+0x00;
+                     work_mode = STATE_4;
                 }
                 break;
             }
         case STATE_4:
             {
-                if((Tstate_time++)==10)// 1s后将目标温度设定为28℃
+                if((Tstate_time++)==20)// 2s后开启气按摩
                 {
-                    Tstate_time = 0;
-                    ShowPar.temp_val =280;
-                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_TEMP; // 温度变化
-                    KeyCmd.req.dat[DAT_VALVE]=0x00;
-                    KeyCmd.req.dat[DAT_TEMP_H] = (uint8)(ShowPar.temp_val >> 8);            // 温度高
-                    KeyCmd.req.dat[DAT_TEMP_L] = (uint8)ShowPar.temp_val;                 // 温度低
-                    //show_tempture(ShowPar.temp_val);
-                    work_mode = STATE_5;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
                 }
-
+                if(Tstate_time == 620)//  1min
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
+                }
+                if(Tstate_time == 1220)//  1min
+                {
+                     Tstate_time = 0;
+                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
+                     KeyCmd.req.dat[DAT_VALVE] = 0x00;
+                     work_mode = STATE_5;
+                }
                 break;
             }
         case STATE_5:
             {
-                if((Tstate_time++)==50)// 5s时间到  open tap
+                if((Tstate_time++)==20)//
                 {
-                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
-                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x01; //数据码 排水
                 }
-                if(Tstate_time==80)// 3s时间到  close tap
+                if(Tstate_time==220)// 20时间到
                 {
                     Tstate_time = 0;
-                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
-                    KeyCmd.req.dat[DAT_VALVE] = 0x00;
-                    work_mode = STATE_6;
-                }
-                break;
-            }
-        case STATE_6:
-            {
-                if((Tstate_time++)==10)// 1s时间到  open shower
-                {
-                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
-                    KeyCmd.req.dat[DAT_VALVE] = 0x02;
-                }
-                if(Tstate_time==40)// 3s时间到  close tap
-                {
-                    Tstate_time = 0;
-                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_DRAINAGE;
                     KeyCmd.req.dat[DAT_VALVE] = 0x00;
                     if((test_cnt++)>999)
                     {
@@ -1986,10 +1985,10 @@ void Serial_Processing (void)
     KeyCmd.req.dat[DAT_KEEP_WARM] = KeyCmd.rsp.dat[DAT_KEEP_WARM];     //保温状态
     KeyCmd.req.dat[DAT_CLAEN] = KeyCmd.rsp.dat[DAT_CLAEN];     //清洁状态
     KeyCmd.req.dat[DAT_TEM_PRE] = KeyCmd.rsp.dat[DAT_TEM_PRE];     //浴缸水温
-    KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
-    delay_ms(5);
-    send_dat(&KeyCmd.req, BUF_SIZE);
-    KeyCmd.req.dat[DAT_FUN_CMD]=0;          //清功能码
+    //KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
+    //delay_ms(5);
+    //send_dat(&KeyCmd.req, BUF_SIZE);
+    //KeyCmd.req.dat[DAT_FUN_CMD]=0;          //清功能码
     memset(&KeyCmd.rsp,0,sizeof(KeyCmd.rsp));
 }
 /*****************************************************************************
@@ -2007,6 +2006,7 @@ void Serial_Processing (void)
     修改内容   : 新生成函数
 
 *****************************************************************************/
+/*
 void receiveHandler(uint8 ui8Data)
 {
     uint8 check_sum = 0;
@@ -2043,6 +2043,7 @@ void receiveHandler(uint8 ui8Data)
         }
     }
 }
+*/
 /*****************************************************************************
  函 数 名  : set_temp_val_dec
  功能描述  : 温度减值函数
@@ -2146,15 +2147,15 @@ void BSP_init(void)
     ShowPar.air_gear = MASSAGE_GEAR_ON3;
     /* END:   Added by zgj, 2018/1/5 */
     KeyCmd.req.sta_num1 = 0x02;
-    KeyCmd.req.sta_num2  = 0xA3;
+    KeyCmd.req.sta_num2  = 0x3A;
     ShowPar.temp_val = 380;
-    KeyCmd.req.dat[DAT_ADDR]  = 0x01;
+    KeyCmd.req.dat[DAT_ADDR]  = 0x04;
     KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
     KeyCmd.req.dat[DAT_TEMP_L]  =  ShowPar.temp_val;
     KeyCmd.req.dat[DAT_FLOW] = 0x64;
     //KeyCmd.req.dat[DAT_TEM_PRE]  = 0x26;
     KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
-    KeyCmd.req.end_num1 = 0x0F;
+    KeyCmd.req.end_num1 = 0x0B;
     KeyCmd.req.end_num2 = 0x04;
     show_tempture( ShowPar.temp_val);
     work_state = WORK_STATE_IDLE;
