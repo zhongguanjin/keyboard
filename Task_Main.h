@@ -38,6 +38,8 @@ typedef struct _TASK_COMPONENTS
 #define   LAMP_VALVE         0X80
 #define   LOCK_VALVE        (TAP_VALVE|SHOWER_VALVE|DEC_VALVE)
 #define   CLEAN_VALVE       (INC_VALVE|WATER_VALVE)
+/*WIFI PAIR*/
+#define   WIFI_VALVE        (TAP_VALVE|DRAIN_VALVE)
 
 
 //key io
@@ -54,7 +56,7 @@ typedef struct _TASK_COMPONENTS
 uint8       Recv_Buf[BUF_SIZE+8];
 
 uint8 Button_id = 0;   //按键id号
-
+uint8 frame_err=0;
 #define   eeprom_addr       0x02
 
 typedef struct
@@ -63,7 +65,7 @@ typedef struct
     uint8 lcd_sleep_flg:1;      //lcd睡眠标志
     uint8 temp_flash_flg:1;     //极限温度 连续闪烁3次，闪烁频率1次/0.5秒标志
     uint8 frame_ok_fag:1;       //一帧数据正确标志
-    uint8 err_f1_flg:1;         //f1错误标志
+    uint8 clean_err_flg:1;         //clean err标志
     uint8 err_flg:1;
     uint8 temp_disreach_flg:1;        //水温保护 0-慢闪，1-快闪
 }tFlag_t;
@@ -74,10 +76,9 @@ enum
 {
   WORK_STATE_IDLE = 0,
   WORK_STATE_LOCK,      //儿童锁
-  WORK_STATE_ERR,
   WORK_STATE_CLEAN,
   WORK_STATE_TEST,
-
+  WORK_WIFI_PAIR,
   WORK_STATE_MAX
 };
 
@@ -125,6 +126,7 @@ enum
 };
 
 #define DAT_ERR_NUM  26
+#define DAT_WIFI_PAIR 19
 /*
 0x00 -- 空指令 查询
 0x01 -- 进水通道切换(此时流量与温度对应发生变化)
@@ -149,6 +151,7 @@ enum
     FUN_CLEAN,      //7
     FUN_LIGHT,      //8
     FUN_LOCK,       //9
+    FUN_WIFI,
     FUN_MAX
 };
 
@@ -267,7 +270,7 @@ extern void TaskProcess(void);
 extern void TaskRemarks(void);
 extern void receiveHandler(uint8 ui8Data);
 extern void Serial_Processing (void);
-
+extern uint8 CRC8_SUM(void * p, uint8 len);
 
 #endif
 

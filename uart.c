@@ -71,11 +71,11 @@ void Init_UART1(void)
 
 void uart_send_byte(char dat)
 {
+	TXREG=dat;
     while(!TX1STAbits.TRMT)		//TRMT=0:正在发送，TRMT=1:发送已完成
 	{
 		continue;
 	}
-	TXREG=dat;
 }
 /*****************************************************************************
  函 数 名  : uart_send_str
