@@ -412,9 +412,10 @@ void TaskKeyTest(void) //100ms
                 if(Tstate_test==80)//8s时间到
                 {
                     Tstate_test = 0;
+                    ShowPar.shower_state = ON;
+                    ShowPar.tap_state = OFF;
                     KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
-                    KeyCmd.req.dat[DAT_VALVE] = 0x02;
-                    ShowPar.shower_state =ON;
+                    KeyCmd.req.dat[DAT_VALVE] =  ShowPar.val&0x02; //数据码 花洒
                     work_mode = STATE_2;
                 }
                 break;
@@ -429,7 +430,7 @@ void TaskKeyTest(void) //100ms
                     KeyCmd.req.dat[DAT_VALVE]=0x00;
                     KeyCmd.req.dat[DAT_TEMP_H] = (uint8)(ShowPar.temp_val >> 8);            // 温度高
                     KeyCmd.req.dat[DAT_TEMP_L] = (uint8)ShowPar.temp_val;                 // 温度低
-                    show_tempture(ShowPar.temp_val);
+                   // show_tempture(ShowPar.temp_val);
                     work_mode = STATE_3;
                 }
                 break;
@@ -444,7 +445,7 @@ void TaskKeyTest(void) //100ms
                     KeyCmd.req.dat[DAT_VALVE]=0x00;
                     KeyCmd.req.dat[DAT_TEMP_H] = (uint8)(ShowPar.temp_val >> 8);            // 温度高
                     KeyCmd.req.dat[DAT_TEMP_L] = (uint8)ShowPar.temp_val;
-                    show_tempture(ShowPar.temp_val);
+                    //show_tempture(ShowPar.temp_val);
                     work_mode = STATE_4;
                 }
                 break;
@@ -454,8 +455,10 @@ void TaskKeyTest(void) //100ms
                 if((Tstate_test++)==30)// 3s时间到
                 {
                     Tstate_test = 0;
-                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;  // 功能码：进水开关改变
-                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
+                    ShowPar.shower_state = OFF;
+                    ShowPar.tap_state = ON;
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
+                    KeyCmd.req.dat[DAT_VALVE] =  ShowPar.val&0x01; //数据码 花洒
                     work_mode = STATE_5;
                 }
                 break;
@@ -463,7 +466,7 @@ void TaskKeyTest(void) //100ms
         case STATE_5:
             {
                  //if(1)
-                 if((KeyCmd.req.dat[DAT_LIQUID]&0x01) == 0x01)
+                 if((KeyCmd.req.dat[DAT_LIQUID]&0x01) == 0x01)//di ye wei
                  {
                      //show_tempture(test_cnt);
                      if((Tstate_test++) == 50)// 5s时间到
@@ -474,8 +477,10 @@ void TaskKeyTest(void) //100ms
                      if((Tstate_test) == 80)// 8s时间到
                      {
                           Tstate_test = 0;
-                          KeyCmd.req.dat[DAT_FUN_CMD] =FUN_INFLOW;//进水通道切换
-                          KeyCmd.req.dat[DAT_VALVE] =0x01;  //龙头
+                          ShowPar.tap_state = ON;
+                          ShowPar.shower_state = OFF;
+                          KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
+                          KeyCmd.req.dat[DAT_VALVE] =  ShowPar.val&0x01;     //龙头
                           work_mode = STATE_6;
                      }
                  }
@@ -643,7 +648,7 @@ void TaskKeyTest(void) //100ms
                         {
                           test_cnt = 0;
                         }
-                        //show_tempture(test_cnt);
+                        show_tempture(test_cnt);
                         buf_cnt[0]= (test_cnt&0xFF00)>>8;       //高八位
                         buf_cnt[1]= test_cnt&0x00FF;
                         EepromWriteByte(eeprom_addr, buf_cnt[0]);
@@ -1497,6 +1502,10 @@ void LAMP_EventHandler(void)
         }
         else if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S
         {
+            LED_LAMP_OFF;
+            KeyCmd.req.dat[DAT_VALVE] = LAMP_OFF;
+            del(LAMP_VALVE);
+            KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:06
             time_test = 0;
             work_state = WORK_STATE_TEST;
             work_mode = STATE_1;
@@ -1506,13 +1515,7 @@ void LAMP_EventHandler(void)
     }
     else if(work_state == WORK_STATE_TEST)
     {
-        if(KeyPressDown&LAMP_VALVE)
-        {
-            KeyPressDown = 0;
-            show_tempture( test_cnt);
-            ShowPar.switch_flg = STATE_ON;
-        }
-        else if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S
+        if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S
         {
             time_test = 0;
             Tstate_test = 0;

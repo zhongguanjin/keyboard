@@ -80,11 +80,13 @@ void led_scan(void)
 
 void show_tempture( uint16 data)//温度显示
 {
-    uint8 dat =0;
+    //uint8 dat =0;
     digi_flg = 0;
     Flg.lcd_sleep_flg = 0;
     digiBuf[0] = data/100;
     digiBuf[1] = (data%100)/10;
+    digiBuf[2] = data%10;
+    /*
     dat = data%10;
     if(dat<5)
     {
@@ -94,6 +96,7 @@ void show_tempture( uint16 data)//温度显示
     {
        digiBuf[2] = 5;
     }
+    */
 }
 
 void show_awaken()
