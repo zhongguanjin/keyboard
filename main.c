@@ -4,6 +4,10 @@
 #include "system.h"
 #include "uart.h"
 #include "my_console.h"
+#include "LCD.h"
+
+
+
 /*****************************************************************************
  函 数 名  : Init_Sys
  功能描述  : 系统初始化函数
@@ -22,6 +26,7 @@
 void Init_Sys(void)
 {
 	Init_MCU();
+
     BSP_init();
 	Init_UART1();
 	Init_TMR0();
@@ -30,6 +35,17 @@ void Init_Sys(void)
 	PEIE	= 1;
 	TMR0IE	= 1;				//开TMR0中断
 	//TMR6IE	= 1;				//开TMR6中断
+}
+
+void wdt_enable(void)
+{
+    SWDTEN =1;
+    WDTCONbits.WDTPS = 0x0B;
+}
+void wdt_disable(void)
+{
+    SWDTEN =0;
+    //WDTCONbits.WDTPS = 0x0B;
 }
 
 /*****************************************************************************
@@ -51,6 +67,7 @@ void main(void)
 {
 	Init_Sys();
     uart_bufInit(&uart1rx);
+    wdt_enable();
 	while(1)
 	{
         console_process();
@@ -111,7 +128,6 @@ void interrupt ISR(void)
     if(RCIE && RCIF)
     {
         RCIF=0;
-        //receiveHandler(RCREG);
        my_console_receive(RCREG);
     }
 }

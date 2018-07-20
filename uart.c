@@ -131,7 +131,11 @@ void send_dat(void *p,uint8 len)
             temp++;
         }
     }
-    delay_ms(5);
+    NOP();
+    NOP();
+    NOP();
+    NOP();
+   // delay_ms(5);
     M485_EN_L;
 }
 

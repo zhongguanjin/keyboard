@@ -19,6 +19,10 @@ typedef struct
 
 tTime_T Time_t;
 
+typedef union {
+      unsigned int word;
+      unsigned char byte[2];
+} wordbyte;
 
 volatile uint8  key_switch_fag;          //按键调节切换标志
 volatile uint8  incdec_fag;
@@ -36,7 +40,19 @@ static int top = 0;
 static uint16 time_clean=0;
 uint8 clean_state;        //clean 步骤
 static uint16 Cstate_time =0;
-static uint8 err_lock=0;
+
+
+//zgj 2018-07-12  ota update
+#define   soft_version      0x01  //软件版本号
+UN32      soft_chksum;         // 软件校验码，4字节
+uint8 chksum=0;
+uint16 block=0;
+uint8 verify=0;  //
+void get_hex_file(void);
+uint8 update_flg=0;
+uint8 bak_ok_flg = 0;
+wordbyte addr;
+static UN16 index;         //
 
 //函数申明
 
@@ -84,7 +100,124 @@ typedef enum _TASK_LIST
     TASKS_MAX                // 总的可供分配的定时任务数目
 } TASK_LIST;
 
+void nv_write(uint8 type,uint16 addr,uint16 data);
+uint16 nv_read(uint8 type,uint16 addr);
+void nv_erase(uint16 addr);
 
+/* FLASH 擦除函数  */
+void nv_erase(uint16 addr)
+{
+    GIE=0;
+
+	while(WR);		//等待读完成
+	EEADR = (uint8)addr;		//写入地址信息
+	EEADRH = (uint8)(addr>>8);
+	CFGS = 0;			// 访问闪存程序存储器或数据 EEPROM 存储器
+	EEPGD = 1;		//操作 FLASH
+	FREE = 1;
+	WREN = 1; 			//写EEPROM允许
+	EECON2 = 0x55;	//写入特定时序
+	EECON2 = 0xaa;
+	WR = 1;
+	/*
+	do{
+		WR = 1;
+	}while(WR==0);
+*/
+    NOP();
+    NOP();
+    NOP();
+    NOP();
+	while(WR);	//等待
+	NOP();
+	NOP();
+	NOP();
+	NOP();
+	WREN = 0;
+	FREE = 0;
+    GIE=1;
+
+}
+
+/* EEPROM / FLASH 读数据函数  */
+uint16 nv_read(uint8 type,uint16 addr)
+{
+	uint16 data;
+    GIE=0;
+	while(RD);		//等待读完成
+
+	if(type == 0) {	// EEPROM
+		EEADR = addr;		//写入要读的址址
+	}	else	{
+		EEADR = (uint8)addr;		//写入地址信息
+		EEADRH = (uint8)(addr>>8);
+	}
+
+	CFGS = 0;			// 访问闪存程序存储器或数据 EEPROM 存储器
+	EEPGD = type;	//操作EEPROM
+	RD = 1;				//执行读操作
+	NOP();
+	NOP();
+	while(RD);	//等待读完成
+
+	if(type == 1) { // FLASH
+		data = EEDATH;
+		data <<= 8;
+		data |= EEDATA;
+	}	else	{
+		data = EEDATA;
+	}
+    GIE=1;
+
+	return data;	//返回读取的数据
+}
+
+/*  EEPROM / FLASH 写数据函数 */
+void nv_write(uint8 type,uint16 addr,uint16 data)
+{
+    GIE=0;
+
+	while(WR);	//等待写完成
+    WREN = 1;           //写EEPROM允许
+	if(type == 0)
+	{
+        CFGS = 0;               //访问闪存程序存储器或数据 EEPROM 存储器
+        EEPGD = 0;       //操作0-EEPROM;1-FLASH
+		EEADR = (uint8)addr;		//写入地址信息
+		EEDATA = (uint8)data;		//写入数据信息
+	}
+	else
+	{
+	    //LWLO=1;
+        CFGS = 0;               //访问闪存程序存储器或数据 EEPROM 存储器
+        EEPGD = 1;       //操作0-EEPROM;1-FLASH
+		EEADR = (uint8)addr;		//写入地址信息
+		EEADRH = (uint8)(addr>>8);
+		EEDATA = (uint8)data;		//写入数据信息
+		EEDATH = (uint8)(data>>8);
+	}
+	EECON2 = 0x55;	//写入特定时序
+	EECON2 = 0xaa;
+
+	WR = 1;				//执行读操作
+	/*
+	do{
+		WR = 1;				//执行读操作
+	}while(WR==0);
+	*/
+	NOP();
+	NOP();
+	NOP();
+	NOP();
+	while(WR);	//等待写完成
+	NOP();
+	NOP();
+	NOP();
+	NOP();
+	WREN = 0;				//禁止写入EEPROM
+    GIE=1;
+
+}
 
 
 /*****************************************************************************
@@ -1191,17 +1324,6 @@ void judge_err_num(void)
             show_tempture(ShowPar.temp_val);
         }
     }
-    if(frame_err==1) //帧错误
-    {
-        err_lock =1;
-        write_err_num(ERR_F6);
-        work_state = WORK_STATE_IDLE;
-    }
-    if((err_lock==1)&&(frame_err==0)) //无帧错误
-    {
-        err_lock=0;
-        show_tempture(ShowPar.temp_val);
-    }
 }
 /*****************************************************************************
  函 数 名  : IDLE_EventHandler
@@ -1796,6 +1918,134 @@ void key_work_process( void )
 
 }
 
+
+void get_hex_file(void)
+{
+    static uint8 config=0;
+    unsigned char rectype,len;
+    wordbyte data;
+    wordbyte addrbak;
+    uint8 num=8;
+    UN16 index_bak;         //
+    index_bak.uch[1]= KeyCmd.rsp.dat[2];//get the  high byte
+    index_bak.uch[0]= KeyCmd.rsp.dat[3];//索引号
+    if(index.ush != index_bak.ush)
+    {
+        KeyCmd.req.dat[DAT_FUN_CMD] =0xE2;
+        KeyCmd.req.dat[DAT_VALVE] =0x01;
+        KeyCmd.req.dat[3]=index.uch[1];
+        KeyCmd.req.dat[4]=index.uch[0];//索引号
+        return ;
+    }
+    index.uch[1]= KeyCmd.rsp.dat[2];//get the  high byte
+    index.uch[0]= KeyCmd.rsp.dat[3];//索引号
+    len = KeyCmd.rsp.dat[4]>>1;    //长度/2
+    rectype =KeyCmd.rsp.dat[7];   //记录类型
+    chksum=0;
+    for(uint8 i=4;i<=24;i++)
+    {
+        chksum = chksum+ KeyCmd.rsp.dat[i];
+    }
+    switch(rectype)
+    {
+        case 0: //数据
+        {
+            if(config == 1)
+            {
+                index.ush++;
+                KeyCmd.req.dat[DAT_FUN_CMD] =0xE2;
+                KeyCmd.req.dat[DAT_VALVE] =0x02;
+                KeyCmd.req.dat[3]=index.uch[1];
+                KeyCmd.req.dat[4]=index.uch[0];//索引号
+                break;
+            }
+            addr.byte[1]=KeyCmd.rsp.dat[5];//get the addr high byte
+            addr.byte[0]=KeyCmd.rsp.dat[6];//get the addr low byte
+            addr.word>>=1;
+            addrbak.word=addr.word-APP_START+APP_BAK; //备份地址
+            verify =ok;
+            if(chksum == 0)
+            {
+                if(block != (addrbak.word/0x20))
+                {
+                    block = addrbak.word/0x20;
+                    nv_erase(block*0x20); // erase 32 word
+                }
+                while(len!=0)
+                {
+                    data.byte[0] = KeyCmd.rsp.dat[num++];   // get the data low byte
+                    data.byte[1] = KeyCmd.rsp.dat[num++];  // get the data high byte
+                    nv_write(1,addrbak.word,data.word);
+                    if(data.word!=nv_read(1,addrbak.word)) //写一个字ok?
+                    {
+                        verify = err;
+                    }
+                    len--;
+                    addrbak.word++;
+                }
+                //请求下一帧
+               index.ush++;
+               KeyCmd.req.dat[DAT_FUN_CMD] =0xE2;
+               KeyCmd.req.dat[DAT_VALVE] =0x02;
+               KeyCmd.req.dat[3]=index.uch[1];
+               KeyCmd.req.dat[4]=index.uch[0];//索引号
+
+             }
+            else if((chksum !=0)||(verify == err))   //err,请求当前帧
+            {
+                KeyCmd.req.dat[DAT_FUN_CMD] =0xE2;
+                KeyCmd.req.dat[DAT_VALVE] =0x01;
+                KeyCmd.req.dat[3]=index.uch[1];
+                KeyCmd.req.dat[4]=index.uch[0];//索引号
+            }
+            break;
+        }
+        case 1:  //结束
+        {
+            for(uint8 i=4;i<=8;i++)
+            {
+                chksum = chksum+ KeyCmd.rsp.dat[i];
+            }
+            if(chksum!=0)
+            {
+                KeyCmd.req.dat[DAT_FUN_CMD] =0xE2;
+                KeyCmd.req.dat[DAT_VALVE] =0x01;
+                KeyCmd.req.dat[3]=index.uch[1];
+                KeyCmd.req.dat[4]=index.uch[0];//索引号
+            }
+            else
+            {
+                config=0;
+                bak_ok_flg=1;
+                KeyCmd.req.dat[DAT_FUN_CMD] =0xE5;
+                KeyCmd.req.dat[DAT_VALVE] =0x01;
+                work_state = WORK_STATE_IDLE;
+            }
+            index.ush=0;
+            break;
+        }
+        case 2:
+        {
+            break;
+        }
+        case 4: //线地址 eeprom or config
+        {
+            config=1;
+            index.ush++;
+            KeyCmd.req.dat[DAT_FUN_CMD] =0xE2;
+            KeyCmd.req.dat[DAT_VALVE] =0x02;
+            KeyCmd.req.dat[3]=index.uch[1];
+            KeyCmd.req.dat[4]=index.uch[0];//索引号
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+}
+
+
 /*****************************************************************************
  函 数 名  : Serial_Processing
  功能描述  : 串口接收处理函数
@@ -1813,102 +2063,90 @@ void key_work_process( void )
 *****************************************************************************/
 void Serial_Processing (void)
 {
-    static uint8 state=0;
     memcpy(&KeyCmd.rsp,Recv_Buf,sizeof(KeyCmd.rsp));
-    if(0 == KeyCmd.req.dat[DAT_FUN_CMD])  //判断功能码 按键板是否在使用
+    uint8 cmd = KeyCmd.rsp.dat[DAT_FUN_CMD];
+    switch(cmd)
     {
-       key_state_update();
-       key_work_process();
+        case 0xD1://升级
+        {
+            index.ush=0,       //
+            work_state = WORK_MCU_UPDATE;
+            if(KeyCmd.req.dat[DAT_VALVE]== 0xFC) //强制升级
+            {
+                nv_write(0, 0,0xAA);
+                #asm
+                    ljmp BOOT_START
+                #endasm
+            }
+            else
+            {
+                if(KeyCmd.rsp.dat[3]>soft_version) //大于当前版本号
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD] =0xE1;
+                    KeyCmd.req.dat[DAT_VALVE] =0x01;
+                    soft_chksum.uch[3]=KeyCmd.rsp.dat[4]; //
+                    soft_chksum.uch[2]=KeyCmd.rsp.dat[5]; //
+                    soft_chksum.uch[1]=KeyCmd.rsp.dat[6]; //
+                    soft_chksum.uch[0]=KeyCmd.rsp.dat[7]; //
+                    update_flg= 1;
+                }
+                else
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD] =0xE1;
+                    KeyCmd.req.dat[DAT_VALVE] =0x02;
+                    work_state = WORK_STATE_IDLE;
+                    update_flg = 0;
+                }
+            }
+            break;
+        }
+        case 0xD2://解析hex文件
+        {
+            if(work_state == WORK_MCU_UPDATE)
+            {
+                if(update_flg != 1)  //重新升级
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD] =0xE2;
+                    KeyCmd.req.dat[DAT_VALVE] =0x03;
+                    return ;
+                }
+                get_hex_file();
+            }
+            break;
+        }
+        default:
+        {
+            if(work_state !=WORK_MCU_UPDATE)
+            {
+                if(0 == KeyCmd.req.dat[DAT_FUN_CMD])  //判断功能码 按键板是否在使用
+                {
+                    key_state_update();
+                    key_work_process();
+                }
+                KeyCmd.req.dat[DAT_ERR_NUM] =KeyCmd.rsp.dat[DAT_ERR_NUM];      //错误码
+                KeyCmd.req.dat[DAT_LIQUID] = KeyCmd.rsp.dat[DAT_LIQUID];       //液位信息
+                KeyCmd.req.dat[DAT_TEM_OUT] = KeyCmd.rsp.dat[DAT_TEM_OUT];     //实际温度
+                KeyCmd.req.dat[DAT_KEEP_WARM] = KeyCmd.rsp.dat[DAT_KEEP_WARM];     //保温状态
+                KeyCmd.req.dat[DAT_CLAEN] = KeyCmd.rsp.dat[DAT_CLAEN];     //清洁状态
+                KeyCmd.req.dat[DAT_TEM_PRE] = KeyCmd.rsp.dat[DAT_TEM_PRE];     //浴缸水温
+            }
+            break;
+        }
+
     }
-    KeyCmd.req.dat[DAT_ERR_NUM] =KeyCmd.rsp.dat[DAT_ERR_NUM];      //错误码
-    KeyCmd.req.dat[DAT_LIQUID] = KeyCmd.rsp.dat[DAT_LIQUID];       //液位信息
-    KeyCmd.req.dat[DAT_TEM_OUT] = KeyCmd.rsp.dat[DAT_TEM_OUT];     //实际温度
-    KeyCmd.req.dat[DAT_KEEP_WARM] = KeyCmd.rsp.dat[DAT_KEEP_WARM];     //保温状态
-    KeyCmd.req.dat[DAT_CLAEN] = KeyCmd.rsp.dat[DAT_CLAEN];     //清洁状态
-    KeyCmd.req.dat[DAT_TEM_PRE] = KeyCmd.rsp.dat[DAT_TEM_PRE];     //浴缸水温
     KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
-    delay_ms(5);
+    //delay_ms(5);
     send_dat(&KeyCmd.req, BUF_SIZE);
     KeyCmd.req.dat[DAT_FUN_CMD]=0;          //清功能码
-    memset(&KeyCmd.rsp,0,sizeof(KeyCmd.rsp));
-}
-/*****************************************************************************
- 函 数 名  : receiveHandler
- 功能描述  : 串口接收回调函数
- 输入参数  : uint8 ui8Data
- 输出参数  : 无
- 返 回 值  :
- 调用函数  :
- 被调函数  :
-
- 修改历史      :
-  1.日    期   : 2017年11月10日
-    作    者   : zgj
-    修改内容   : 新生成函数
-
-*****************************************************************************/
-
-void receiveHandler(uint8 ui8Data)
-{
-    uint8 check_sum = 0;
-    static uint8 err_cnt= 0;
-    Recv_Buf[Recv_Len] = ui8Data;
-    if(Recv_Buf[0]==0x02)
+    if(bak_ok_flg == 1)//成功备份
     {
-        Recv_Len++;
-        if(Recv_Len >= BUF_SIZE) //接收到32byte的数据
-        {
-             if((Recv_Buf[1]==0x3A)&&(Recv_Buf[2]==0x01))
-             {
-                 if((Recv_Buf[31]== 0x04)&&(Recv_Buf[30]== 0x0B))
-                 {
-                     for(uint8 i=2;i<(crc_len+2);i++)
-                     {
-                         check_sum^=Recv_Buf[i];
-                     }
-                     if(check_sum == Recv_Buf[29])
-                     //if(CRC8_SUM(&Recv_Buf[2], crc_len) == Recv_Buf[29])
-                     {
-                         Recv_Len = 0;
-                         frame_err=0;
-                         err_cnt=0;
-                         Flg.frame_ok_fag=1;
-                     }
-                     else
-                     {
-                          Recv_Len = 0;
-                          Flg.frame_ok_fag=0;
-                          err_cnt++;
-                          if( err_cnt>=10)
-                          {
-                            err_cnt=0;
-                            frame_err=1;
-                          }
-                     }
-                }
-                else if((Recv_Buf[31]!= 0x04)||(Recv_Buf[30]!= 0x0B))  //结束码不对
-                {
-                    Recv_Len = 0;
-                    err_cnt++;
-                    if(err_cnt>=10)
-                    {
-                        err_cnt=0;
-                        frame_err=1;
-                    }
-                    Flg.frame_ok_fag = 0;
-                }
-            }
-            else if((Recv_Buf[1]!=0x3A)||(Recv_Buf[2]!=0x01)) //
-            {
-                Recv_Len = 0;
-                Flg.frame_ok_fag = 0;
-            }
-       }
-    }
-    else if(Recv_Buf[0]!=0x02)
-    {
-        Recv_Len = 0;
-        Flg.frame_ok_fag = 0;
+        bak_ok_flg=0;
+        nv_write(0, 0,0x55);
+        nv_write(0, 1,addr.byte[1]);
+        nv_write(0, 2,addr.byte[0]);
+        #asm
+            ljmp BOOT_START
+        #endasm
     }
 }
 

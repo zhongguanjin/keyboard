@@ -15,6 +15,14 @@ typedef struct _TASK_COMPONENTS
 } TASK_COMPONENTS;              // 任务定义
 
 
+#define BOOT_START 0x0000
+// 2 k
+#define APP_START 	0x0800//0x0800
+// 7 k
+#define APP_BAK 	0x2400
+// 7 k
+
+
 /*按键功能定义*/
 
 #if key_5
@@ -43,6 +51,7 @@ typedef struct _TASK_COMPONENTS
 #define   WIFI_VALVE        (TAP_VALVE|DRAIN_VALVE)
 
 
+
 //key io
 #define   KEY_SBIO_IN         (TRISB = 0XFF)
 #define   KEY_DAT             (PORTB)
@@ -57,7 +66,7 @@ typedef struct _TASK_COMPONENTS
 uint8       Recv_Buf[BUF_SIZE+8];
 
 uint8 Button_id = 0;   //按键id号
-uint8 frame_err=0;
+
 
 typedef struct
 {
@@ -79,6 +88,7 @@ enum
   WORK_STATE_LOCK,      //儿童锁
   WORK_STATE_CLEAN,
   WORK_WIFI_PAIR,
+  WORK_MCU_UPDATE,
   WORK_STATE_MAX
 };
 
@@ -257,9 +267,12 @@ typedef struct
 }tKeyCmd_t;
 
 
- tKeyCmd_t  KeyCmd;
- uint8 Recv_Len = 0;	// 接收长度
- tShowParams_t  ShowPar ;
+tKeyCmd_t  KeyCmd;
+
+
+
+
+tShowParams_t  ShowPar ;
 
 
 extern void BSP_init(void);

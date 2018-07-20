@@ -47,11 +47,7 @@ uint8 digiBuf[3]; //数码管缓冲区
 void led_scan(void)
 {
     static uint8 digiPos = 0;
-    static uint8 time_count = 0;
-    //LED_COM1_L;
-    //LED_COM2_L;
-    //LED_COM3_L;
-    //LED_SEIO_OUT_L;
+
     if(digi_flg == 1) //清除小数点
     {
        LED_SEG_DAT =tab_val[digiBuf[digiPos]];
@@ -60,17 +56,40 @@ void led_scan(void)
     {
         LED_SEG_DAT =tab_num[digiBuf[digiPos]];
     }
+
     if(Flg.lcd_sleep_flg == 0)
     {
         switch(digiPos)
         {
-            case 0: LED_COM1_L;LED_COM2_H;LED_COM3_H; break; // 选择第一列数码管
-            case 1: LED_COM1_H;LED_COM2_L;LED_COM3_H; break; // 选择第二列数码管
-            case 2: LED_COM1_H;LED_COM2_H;LED_COM3_L; break; // 选择第三列数码管
+            case 0:
+            {
+                LED_COM1_L;
+                LED_COM2_H;
+                LED_COM3_H;
+                break; // 选择第一列数码管
+            }
+            case 1:
+            {
+                LED_COM1_H;
+                LED_COM2_L;
+                LED_COM3_H;
+                break; // 选择第二列数码管
+            }
+            case 2:
+            {
+                LED_COM1_H;
+                LED_COM2_H;
+                LED_COM3_L;
+                break; // 选择第三列数码管
+            }
+            default:
+            {
+                break;
+            }
         }
     }
     digiPos++;
-    if(digiPos == 3)
+    if(digiPos >= 3)
     {
         digiPos = 0;
     }
