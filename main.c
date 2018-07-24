@@ -111,7 +111,6 @@ void interrupt ISR(void)
     if(RCIE && RCIF)
     {
         RCIF=0;
-        //receiveHandler(RCREG);
        my_console_receive(RCREG);
     }
 }

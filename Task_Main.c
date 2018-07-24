@@ -365,7 +365,185 @@ uint8 EepromReadByte(uint8 addr)
 	return EEDATL;
 
 }
+#if 1
+/*****************************************************************************
+ 函 数 名  : TaskKeyTest
+ 功能描述  : 寿命测试程序函数
+ 输入参数  : void
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
 
+ 修改历史      :
+  1.日    期   : 2017年12月11日
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
+/*
+浴缸系统测试：
+开启:按灯光键5s进入测试模式
+关闭:按灯光键5s退出测试模式
+测试次数最大显示999，超过清0重新计数
+先把温度调到15度。
+1，2s后开启水按摩,开紫外杀菌，1min后关闭水按摩，关紫外杀菌。
+2，2s后开启气按摩，1min后关闭气按摩。
+3，2s后开启水按摩,开紫外杀菌,2s后开启气按摩，1min后关闭水按摩,关紫外杀菌，1min后关闭气按摩
+4，2s后开启管道清洁功能,开水按摩和紫外杀菌,开清洁电磁阀,1nin后关闭管道清洁功能。
+5，2s后开启下水器，20s后关闭下水器，
+6, 2s后开启水底灯（红色）-2s切换另一种颜色循环一圈回到红色，2s后关闭水底灯，返回第1步重新循环。
+*/
+void TaskKeyTest(void) //100ms
+{
+    switch ( work_mode)
+    {
+        case STATE_1:
+            {
+                if((Tstate_test++)==10)
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_DRAINAGE;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x00;
+                }
+                if(Tstate_test==20)// 2s后开启水按摩
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
+                }
+                if(Tstate_test == 620)//  1min
+                {
+                     Tstate_test = 0;
+                     KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                      KeyCmd.req.dat[DAT_VALVE] = 0x00;
+                     work_mode = STATE_2;
+                }
+                break;
+            }
+        case STATE_2:
+            {
+                if((Tstate_test++)==20)// 2s后开启气按摩
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                     KeyCmd.req.dat[DAT_VALVE] = 0x02;
+                }
+                if(Tstate_test == 620)//  1min
+                {
+                     Tstate_test = 0;
+                     KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                      KeyCmd.req.dat[DAT_VALVE] = 0x00;
+                     work_mode = STATE_3;
+                }
+                break;
+            }
+        case STATE_3:
+            {
+                if((Tstate_test++)==20)//
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
+                }
+                if(Tstate_test == 40)//  2s
+                {
+                     KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                      KeyCmd.req.dat[DAT_VALVE] = 0x03;
+                }
+                if(Tstate_test == 640)// 1min
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                    KeyCmd.req.dat[DAT_VALVE] = 0x02;
+                }
+                if(Tstate_test == 1240)//  1min
+                {
+                     Tstate_test = 0;
+                     KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
+                      KeyCmd.req.dat[DAT_VALVE] = 0x00;
+                     work_mode = STATE_4;
+                }
+                break;
+            }
+        case STATE_4:
+            {
+                if((Tstate_test++)==20)
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
+                }
+                if(Tstate_test == 620)//  1min
+                {
+                     Tstate_test = 0;
+                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_CLEAN;
+                     KeyCmd.req.dat[DAT_VALVE] = 0x00;
+                     work_mode = STATE_5;
+                }
+                break;
+            }
+        case STATE_5:
+            {
+                if((Tstate_test++)==20)//
+                {
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x01; //数据码 排水
+                }
+                if(Tstate_test==220)// 20时间到
+                {
+
+                    KeyCmd.req.dat[DAT_FUN_CMD]= FUN_DRAINAGE;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x00;
+                }
+                if(Tstate_test==230)// 1s时间到
+                {
+                    Tstate_test = 0;
+                  work_mode = STATE_6;
+                }
+
+                break;
+            }
+         case STATE_6:
+             {
+                 static uint8 color=1;
+                 if(((Tstate_test++)%21)==0)
+                 {
+                     Tstate_test=1;
+                     KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT; //灯光功能
+                     KeyCmd.req.dat[DAT_VALVE] = color; //循环变色
+                     color++;
+                 }
+                 if(color >7)
+                 {
+                     Tstate_test = 0;
+                     color=1;
+                     work_mode = STATE_7;
+                 }
+             }
+         case STATE_7:
+             {
+                 if((Tstate_test++)==20)// 20时间到
+                 {
+                     Tstate_test = 0;
+                     KeyCmd.req.dat[DAT_FUN_CMD]= FUN_LIGHT;
+                     KeyCmd.req.dat[DAT_VALVE] = 0x00;
+                     if((test_cnt++)>999)
+                     {
+                       test_cnt = 0;
+                     }
+                     show_tempture( test_cnt);
+                     buf_cnt[0]= (test_cnt&0xFF00)>>8;       //高八位
+                     buf_cnt[1]= test_cnt&0x00FF;
+                     EepromWriteByte(eeprom_addr, buf_cnt[0]);
+                     EepromWriteByte(eeprom_addr+0x01, buf_cnt[1]);
+                     work_mode = STATE_1;
+                 }
+                 break;
+             }
+            default :
+            {
+
+                break ;
+            }
+    }
+}
+
+#else
 /*****************************************************************************
  函 数 名  : TaskKeyTest
  功能描述  : 寿命测试程序函数
@@ -665,7 +843,7 @@ void TaskKeyTest(void) //100ms
             }
     }
 }
-
+#endif
 /*****************************************************************************
  函 数 名  : TaskKeyScan
  功能描述  : 按键扫描任务
@@ -1505,10 +1683,11 @@ void LAMP_EventHandler(void)
             LED_LAMP_OFF;
             KeyCmd.req.dat[DAT_VALVE] = LAMP_OFF;
             del(LAMP_VALVE);
-            KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:06
+            KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:08
             time_test = 0;
             work_state = WORK_STATE_TEST;
             work_mode = STATE_1;
+            Tstate_test = 0;
             test_cnt = ((EepromReadByte(eeprom_addr)&0x00ff)<<8)+(EepromReadByte(eeprom_addr+0x01)&0x00ff);
             show_tempture( test_cnt);
         }
@@ -1518,7 +1697,7 @@ void LAMP_EventHandler(void)
         if((LastKey&LAMP_VALVE)&&((time_test++)>=500)) // 5S
         {
             time_test = 0;
-            Tstate_test = 0;
+            //Tstate_test = 0;
             show_tempture( ShowPar.temp_val);
             work_state = WORK_STATE_IDLE;
         }
@@ -2251,84 +2430,6 @@ void Serial_Processing (void)
     send_dat(&KeyCmd.req, BUF_SIZE);
     KeyCmd.req.dat[DAT_FUN_CMD]=0;          //清功能码
     memset(&KeyCmd.rsp,0,sizeof(KeyCmd.rsp));
-}
-/*****************************************************************************
- 函 数 名  : receiveHandler
- 功能描述  : 串口接收回调函数
- 输入参数  : uint8 ui8Data
- 输出参数  : 无
- 返 回 值  :
- 调用函数  :
- 被调函数  :
-
- 修改历史      :
-  1.日    期   : 2017年11月10日
-    作    者   : zgj
-    修改内容   : 新生成函数
-
-*****************************************************************************/
-void receiveHandler(uint8 ui8Data)
-{
-    uint8 check_sum = 0;
-    static uint8 err_cnt= 0;
-    Recv_Buf[Recv_Len] = ui8Data;
-    if(Recv_Buf[0]==0x02)
-    {
-        Recv_Len++;
-        if(Recv_Len >= BUF_SIZE) //接收到32byte的数据
-        {
-             if((Recv_Buf[1]==0x3A)&&(Recv_Buf[2]==0x01))
-             {
-                 if((Recv_Buf[31]== 0x04)&&(Recv_Buf[30]== 0x0B))
-                 {
-                     for(uint8 i=2;i<(crc_len+2);i++)
-                     {
-                         check_sum^=Recv_Buf[i];
-                     }
-                     if(check_sum == Recv_Buf[29])
-                     //if(CRC8_SUM(&Recv_Buf[2], crc_len) == Recv_Buf[29])
-                     {
-                         Recv_Len = 0;
-                         frame_err=0;
-                         err_cnt=0;
-                         Flg.frame_ok_fag=1;
-                     }
-                     else
-                     {
-                          Recv_Len = 0;
-                          Flg.frame_ok_fag=0;
-                          err_cnt++;
-                          if( err_cnt>=10)
-                          {
-                            err_cnt=0;
-                            frame_err=1;
-                          }
-                     }
-                }
-                else if((Recv_Buf[31]!= 0x04)||(Recv_Buf[30]!= 0x0B))  //结束码不对
-                {
-                    Recv_Len = 0;
-                    err_cnt++;
-                    if(err_cnt>=10)
-                    {
-                        err_cnt=0;
-                        frame_err=1;
-                    }
-                    Flg.frame_ok_fag = 0;
-                }
-            }
-            else if((Recv_Buf[1]!=0x3A)||(Recv_Buf[2]!=0x01)) //
-            {
-                Recv_Len = 0;
-                Flg.frame_ok_fag = 0;
-            }
-       }
-    }
-    else if(Recv_Buf[0]!=0x02)
-    {
-        Recv_Len = 0;
-        Flg.frame_ok_fag = 0;
-    }
 }
 
 /*****************************************************************************
