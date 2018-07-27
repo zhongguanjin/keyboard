@@ -73,6 +73,7 @@ void main(void)
         console_process();
         if(Flg.frame_ok_fag == 1)
         {
+            clear_f6_cnt();
             Flg.frame_ok_fag = 0;
             //delay_ms(10);
             Serial_Processing();

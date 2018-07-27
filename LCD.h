@@ -15,7 +15,8 @@ enum
 #define     ERR_F6    0X02
 #define     ERR_F9    0X04
 #define     ERR_F8    0X08
-#define     ERR_F2    0X10
+#define     ERR_F2    0X20
+#define     ERR_F7    0X10
 #define     ERR_OK    0X00
 
 

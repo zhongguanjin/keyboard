@@ -77,6 +77,7 @@ typedef struct
     uint8 clean_err_flg:1;         //clean err标志
     uint8 err_flg:1;
     uint8 temp_disreach_flg:1;        //水温保护 0-慢闪，1-快闪
+    uint8 err_f1_flg:1;         //f1错误标志
 
 }tFlag_t;
 
@@ -284,6 +285,6 @@ extern void TaskRemarks(void);
 extern void receiveHandler(uint8 ui8Data);
 extern void Serial_Processing (void);
 extern uint8 CRC8_SUM(void * p, uint8 len);
-
+extern void clear_f6_cnt(void);
 #endif
 

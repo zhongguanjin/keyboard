@@ -48,8 +48,8 @@ void Init_TMR6(void)
     T6OUTPS3 = 0;
     TMR6ON = 1;   //使能位
     T6CKPS0 = 1;   // 4分频  0.25*4 = 1us
-    T6CKPS1 = 1;
-    PR6 = 100;   // 100us中断一次
+    T6CKPS1 = 0;
+    PR6 = 100;   // 100us中断一次  //10khz
     TMR6IE =0;
     TMR6IF =0;
 }

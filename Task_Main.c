@@ -54,6 +54,8 @@ uint8 bak_ok_flg = 0;
 wordbyte addr;
 static UN16 index;         //
 
+uint8 f6_err_cnt=0;   //zgj 2018-7-26 通信故障
+
 //函数申明
 
 void TaskShow(void);
@@ -219,7 +221,11 @@ void nv_write(uint8 type,uint16 addr,uint16 data)
 
 }
 
+void clear_f6_cnt(void)
+{
+    f6_err_cnt = 0;
 
+}
 /*****************************************************************************
  函 数 名  : TaskShow
  功能描述  : 温度显示任务
@@ -237,6 +243,11 @@ void nv_write(uint8 type,uint16 addr,uint16 data)
 *****************************************************************************/
 void TaskShow(void) //100ms
 {
+    if((f6_err_cnt++)>=100)//10s
+    {
+        f6_err_cnt = 70;
+        write_err_num(ERR_F6);
+    }
     show_work();
 	check_uart();
     show_temp_flash();
@@ -720,7 +731,7 @@ void show_temp_flash(void)//100ms
 *****************************************************************************/
 void TAP_EventHandler(void)
 {
-    if(work_state == WORK_STATE_IDLE)
+    if((work_state == WORK_STATE_IDLE)&&(Flg.err_f1_flg == 0))
     {
         if(KeyPressDown&TAP_VALVE) //第一次按下
          {
@@ -749,6 +760,18 @@ void TAP_EventHandler(void)
             dbg("tap,%x\r\n",KeyCmd.req.dat[DAT_VALVE]);
         }
     }
+    else if((Flg.err_f1_flg == 1)&&(KeyCmd.req.dat[DAT_ERR_NUM]&0x80))  //f1 err 时
+    {
+            time_cnt_del(TAP_VALVE);
+            ShowPar.tap_state = STATE_ON;
+            Flg.err_f1_flg =0;
+            ShowPar.temp_val = 380;
+            KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
+            KeyCmd.req.dat[DAT_STATE] = ShowPar.val&0x03;
+            KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
+            KeyCmd.req.dat[DAT_TEMP_L]  =  ShowPar.temp_val;
+            show_tempture(ShowPar.temp_val);
+     }
 }
 /*****************************************************************************
  函 数 名  : SHOWER_EventHandler
@@ -767,7 +790,7 @@ void TAP_EventHandler(void)
 *****************************************************************************/
 void SHOWER_EventHandler(void)
 {
-    if(work_state == WORK_STATE_IDLE)
+    if((work_state == WORK_STATE_IDLE)&&(Flg.err_f1_flg == 0))
     {
         if(KeyPressDown&SHOWER_VALVE)  //第一次触发
         {
@@ -796,6 +819,18 @@ void SHOWER_EventHandler(void)
             dbg("shower,%x\r\n",KeyCmd.req.dat[DAT_VALVE]);
         }
     }
+    else if((Flg.err_f1_flg == 1)&&(KeyCmd.req.dat[DAT_ERR_NUM]&0x80))  //f1 err 时
+    {
+        time_cnt_del(SHOWER_VALVE);
+        ShowPar.shower_state = STATE_ON;
+        Flg.err_f1_flg =0;
+        ShowPar.temp_val = 380;
+        KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
+        KeyCmd.req.dat[DAT_STATE] = ShowPar.val&0x03;
+        KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
+        KeyCmd.req.dat[DAT_TEMP_L]  =  ShowPar.temp_val;
+        show_tempture(ShowPar.temp_val);
+     }
 }
 /*****************************************************************************
  函 数 名  : DRAIN_EventHandler
@@ -1307,12 +1342,16 @@ void WIFI_EventHandler(void) //10ms
 *****************************************************************************/
 void judge_err_num(void)
 {
-    if((KeyCmd.req.dat[DAT_ERR_NUM]&0x0F) != 0x00)  //有错误
+    if((KeyCmd.req.dat[DAT_ERR_NUM]&0xeF) != 0x00)  //有错误
     {
         if((key_switch_fag==0)&&(ShowPar.switch_flg==0)&&(incdec_fag == 0))
         {
             Flg.err_flg =1;
-            write_err_num(KeyCmd.req.dat[DAT_ERR_NUM]&0x0F);
+            write_err_num(KeyCmd.req.dat[DAT_ERR_NUM]&0xeF);
+            if(KeyCmd.req.dat[DAT_ERR_NUM]&0xeF == 0x01)//f1错误
+            {
+                Flg.err_f1_flg =1;
+            }
             work_state = WORK_STATE_IDLE;
         }
     }
@@ -1321,6 +1360,7 @@ void judge_err_num(void)
         if(Flg.err_flg ==1)
         {
             Flg.err_flg =0;
+            Flg.err_f1_flg =0;
             show_tempture(ShowPar.temp_val);
         }
     }
