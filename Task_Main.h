@@ -78,6 +78,7 @@ typedef struct
     uint8 err_flg:1;
     uint8 temp_disreach_flg:1;        //水温保护 0-慢闪，1-快闪
     uint8 err_f1_flg:1;         //f1错误标志
+    uint8 err_f6_flg:1;
 
 }tFlag_t;
 
@@ -131,13 +132,12 @@ enum
     DAT_DRAIN,       //13
     DAT_CLAEN,
     DAT_LOCK,       //15
-    DAT_SPARE2,
-    DAT_SPARE3,
     DAT_MAX
 };
 
-#define DAT_ERR_NUM  26
-#define DAT_WIFI_PAIR 19
+#define DAT_ERR_NUM     26
+#define DAT_WIFI_PAIR   19
+#define DAT_MAS_TIME    18
 /*
 0x00 -- 空指令 查询
 0x01 -- 进水通道切换(此时流量与温度对应发生变化)

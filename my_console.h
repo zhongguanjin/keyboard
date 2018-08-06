@@ -4,7 +4,6 @@
 
 #include "config.h"
 
-#define BUF_MAX 11
 
 
 

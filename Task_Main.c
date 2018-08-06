@@ -4,6 +4,7 @@
 #include "stdio.h"
 #include <string.h>
 #include "dbg.h"
+#include "eeprom.h"
 
 volatile uint8  work_state ;
 typedef struct
@@ -102,129 +103,15 @@ typedef enum _TASK_LIST
     TASKS_MAX                // 总的可供分配的定时任务数目
 } TASK_LIST;
 
-void nv_write(uint8 type,uint16 addr,uint16 data);
-uint16 nv_read(uint8 type,uint16 addr);
-void nv_erase(uint16 addr);
 
-/* FLASH 擦除函数  */
-void nv_erase(uint16 addr)
-{
-    GIE=0;
-
-	while(WR);		//等待读完成
-	EEADR = (uint8)addr;		//写入地址信息
-	EEADRH = (uint8)(addr>>8);
-	CFGS = 0;			// 访问闪存程序存储器或数据 EEPROM 存储器
-	EEPGD = 1;		//操作 FLASH
-	FREE = 1;
-	WREN = 1; 			//写EEPROM允许
-	EECON2 = 0x55;	//写入特定时序
-	EECON2 = 0xaa;
-	WR = 1;
-	/*
-	do{
-		WR = 1;
-	}while(WR==0);
-*/
-    NOP();
-    NOP();
-    NOP();
-    NOP();
-	while(WR);	//等待
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	WREN = 0;
-	FREE = 0;
-    GIE=1;
-
-}
-
-/* EEPROM / FLASH 读数据函数  */
-uint16 nv_read(uint8 type,uint16 addr)
-{
-	uint16 data;
-    GIE=0;
-	while(RD);		//等待读完成
-
-	if(type == 0) {	// EEPROM
-		EEADR = addr;		//写入要读的址址
-	}	else	{
-		EEADR = (uint8)addr;		//写入地址信息
-		EEADRH = (uint8)(addr>>8);
-	}
-
-	CFGS = 0;			// 访问闪存程序存储器或数据 EEPROM 存储器
-	EEPGD = type;	//操作EEPROM
-	RD = 1;				//执行读操作
-	NOP();
-	NOP();
-	while(RD);	//等待读完成
-
-	if(type == 1) { // FLASH
-		data = EEDATH;
-		data <<= 8;
-		data |= EEDATA;
-	}	else	{
-		data = EEDATA;
-	}
-    GIE=1;
-
-	return data;	//返回读取的数据
-}
-
-/*  EEPROM / FLASH 写数据函数 */
-void nv_write(uint8 type,uint16 addr,uint16 data)
-{
-    GIE=0;
-
-	while(WR);	//等待写完成
-    WREN = 1;           //写EEPROM允许
-	if(type == 0)
-	{
-        CFGS = 0;               //访问闪存程序存储器或数据 EEPROM 存储器
-        EEPGD = 0;       //操作0-EEPROM;1-FLASH
-		EEADR = (uint8)addr;		//写入地址信息
-		EEDATA = (uint8)data;		//写入数据信息
-	}
-	else
-	{
-	    //LWLO=1;
-        CFGS = 0;               //访问闪存程序存储器或数据 EEPROM 存储器
-        EEPGD = 1;       //操作0-EEPROM;1-FLASH
-		EEADR = (uint8)addr;		//写入地址信息
-		EEADRH = (uint8)(addr>>8);
-		EEDATA = (uint8)data;		//写入数据信息
-		EEDATH = (uint8)(data>>8);
-	}
-	EECON2 = 0x55;	//写入特定时序
-	EECON2 = 0xaa;
-
-	WR = 1;				//执行读操作
-	/*
-	do{
-		WR = 1;				//执行读操作
-	}while(WR==0);
-	*/
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	while(WR);	//等待写完成
-	NOP();
-	NOP();
-	NOP();
-	NOP();
-	WREN = 0;				//禁止写入EEPROM
-    GIE=1;
-
-}
 
 void clear_f6_cnt(void)
 {
     f6_err_cnt = 0;
-
+    if(Flg.err_f6_flg==1)
+    {
+        show_tempture(ShowPar.temp_val);
+    }
 }
 /*****************************************************************************
  函 数 名  : TaskShow
@@ -246,6 +133,7 @@ void TaskShow(void) //100ms
     if((f6_err_cnt++)>=100)//10s
     {
         f6_err_cnt = 70;
+        Flg.err_f6_flg=1;
         write_err_num(ERR_F6);
     }
     show_work();
@@ -1342,13 +1230,13 @@ void WIFI_EventHandler(void) //10ms
 *****************************************************************************/
 void judge_err_num(void)
 {
-    if((KeyCmd.req.dat[DAT_ERR_NUM]&0xeF) != 0x00)  //有错误
+    if((KeyCmd.req.dat[DAT_ERR_NUM]&0x7F) != 0x00)  //有错误
     {
         if((key_switch_fag==0)&&(ShowPar.switch_flg==0)&&(incdec_fag == 0))
         {
             Flg.err_flg =1;
-            write_err_num(KeyCmd.req.dat[DAT_ERR_NUM]&0xeF);
-            if(KeyCmd.req.dat[DAT_ERR_NUM]&0xeF == 0x01)//f1错误
+            write_err_num(KeyCmd.req.dat[DAT_ERR_NUM]&0x7F);
+            if((KeyCmd.req.dat[DAT_ERR_NUM]&0x01) == 0x01)//f1错误
             {
                 Flg.err_f1_flg =1;
             }
@@ -1794,7 +1682,8 @@ void key_state_update(void)
                 break;
         }
     }
-    if(KeyCmd.rsp.dat[DAT_LIGHT]!=KeyCmd.req.dat[DAT_LIGHT]) //lamp状态更新
+    if((KeyCmd.rsp.dat[DAT_LIGHT]!=KeyCmd.req.dat[DAT_LIGHT])
+        ||(KeyCmd.rsp.dat[DAT_LIGHT]!=ShowPar.lamp_state)) //lamp状态更新
     {
         KeyCmd.req.dat[DAT_LIGHT] =KeyCmd.rsp.dat[DAT_LIGHT];
         time_cnt_del(LAMP_VALVE);
@@ -1822,7 +1711,8 @@ void key_state_update(void)
            }
        }
     }
-    if(KeyCmd.rsp.dat[DAT_DRAIN]!=KeyCmd.req.dat[DAT_DRAIN]) //drain状态更新
+    if((KeyCmd.rsp.dat[DAT_DRAIN]!=KeyCmd.req.dat[DAT_DRAIN])
+        ||(KeyCmd.rsp.dat[DAT_DRAIN]!=ShowPar.drain_state)) //drain状态更新
     {
          time_cnt_del(DRAIN_VALVE);
          KeyCmd.req.dat[DAT_DRAIN] =KeyCmd.rsp.dat[DAT_DRAIN];
@@ -2169,13 +2059,14 @@ void Serial_Processing (void)
                 KeyCmd.req.dat[DAT_KEEP_WARM] = KeyCmd.rsp.dat[DAT_KEEP_WARM];     //保温状态
                 KeyCmd.req.dat[DAT_CLAEN] = KeyCmd.rsp.dat[DAT_CLAEN];     //清洁状态
                 KeyCmd.req.dat[DAT_TEM_PRE] = KeyCmd.rsp.dat[DAT_TEM_PRE];     //浴缸水温
+                KeyCmd.req.dat[DAT_MAS_TIME] = KeyCmd.rsp.dat[DAT_MAS_TIME];     //按摩时间
             }
             break;
         }
 
     }
     KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
-    //delay_ms(5);
+    delay_ms(5);
     send_dat(&KeyCmd.req, BUF_SIZE);
     KeyCmd.req.dat[DAT_FUN_CMD]=0;          //清功能码
     if(bak_ok_flg == 1)//成功备份
@@ -2189,7 +2080,6 @@ void Serial_Processing (void)
         #endasm
     }
 }
-
 /*****************************************************************************
  函 数 名  : set_temp_val_dec
  功能描述  : 温度减值函数
