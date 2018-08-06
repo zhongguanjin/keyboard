@@ -1683,7 +1683,7 @@ void key_state_update(void)
         }
     }
     if((KeyCmd.rsp.dat[DAT_LIGHT]!=KeyCmd.req.dat[DAT_LIGHT])
-        ||(KeyCmd.rsp.dat[DAT_LIGHT]!=ShowPar.lamp_state)) //lamp状态更新
+        ||(KeyCmd.rsp.dat[DAT_LIGHT]!=ShowPar.lamp_gear)) //lamp状态更新
     {
         KeyCmd.req.dat[DAT_LIGHT] =KeyCmd.rsp.dat[DAT_LIGHT];
         time_cnt_del(LAMP_VALVE);
