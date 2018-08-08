@@ -53,8 +53,8 @@ void get_hex_file(void);
 uint8 update_flg=0;
 uint8 bak_ok_flg = 0;
 wordbyte addr;
-static UN16 index;         //
-
+static UN16 index=0;         //
+//end
 uint8 f6_err_cnt=0;   //zgj 2018-7-26 通信故障
 
 //函数申明
@@ -139,7 +139,7 @@ void TaskShow(void) //100ms
     show_work();
 	check_uart();
     show_temp_flash();
-    if(key_switch_fag ==0)
+    if((key_switch_fag==0)&&(ShowPar.switch_flg==0)&&(incdec_fag == 0))
     {
         show_temp_actul();
 	}
@@ -1682,8 +1682,7 @@ void key_state_update(void)
                 break;
         }
     }
-    if((KeyCmd.rsp.dat[DAT_LIGHT]!=KeyCmd.req.dat[DAT_LIGHT])
-        ||(KeyCmd.rsp.dat[DAT_LIGHT]!=ShowPar.lamp_gear)) //lamp状态更新
+    if(KeyCmd.rsp.dat[DAT_LIGHT]!=KeyCmd.req.dat[DAT_LIGHT])
     {
         KeyCmd.req.dat[DAT_LIGHT] =KeyCmd.rsp.dat[DAT_LIGHT];
         time_cnt_del(LAMP_VALVE);
@@ -1919,7 +1918,6 @@ void get_hex_file(void)
                KeyCmd.req.dat[DAT_VALVE] =0x02;
                KeyCmd.req.dat[3]=index.uch[1];
                KeyCmd.req.dat[4]=index.uch[0];//索引号
-
              }
             else if((chksum !=0)||(verify == err))   //err,请求当前帧
             {
@@ -2073,6 +2071,7 @@ void Serial_Processing (void)
     {
         bak_ok_flg=0;
         nv_write(0, 0,0x55);
+        addr.word+=0x08;      //发送终止地址
         nv_write(0, 1,addr.byte[1]);
         nv_write(0, 2,addr.byte[0]);
         #asm
