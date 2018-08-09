@@ -84,6 +84,7 @@ void WIFI_EventHandler(void);
 void key_work_process( void );
 void judge_err_num(void);
 void check_uart(void);
+void clear_fun_show(void);
 
 // 定义结构体变量
 static TASK_COMPONENTS TaskComps[] =
@@ -113,45 +114,20 @@ void clear_f6_cnt(void)
         show_tempture(ShowPar.temp_val);
     }
 }
-/*****************************************************************************
- 函 数 名  : TaskShow
- 功能描述  : 温度显示任务
- 输入参数  : void
- 输出参数  : 无
- 返 回 值  :
- 调用函数  :
- 被调函数  :
 
- 修改历史      :
-  1.日    期   : 2017年5月25日 星期四
-    作    者   : zgj
-    修改内容   : 新生成函数
-
-*****************************************************************************/
-void TaskShow(void) //100ms
+void clear_fun_show(void)
 {
-    if((f6_err_cnt++)>=100)//10s
-    {
-        f6_err_cnt = 70;
-        Flg.err_f6_flg=1;
-        write_err_num(ERR_F6);
-    }
-    show_work();
-	check_uart();
-    show_temp_flash();
-    if((key_switch_fag==0)&&(ShowPar.switch_flg==0)&&(incdec_fag == 0))
-    {
-        show_temp_actul();
-	}
     if(work_state == WORK_STATE_CLEAN)
     {
+       static uint8 cnt =0,flash_cnt=0;
        if(Flg.clean_err_flg == 0)
        {
+            cnt=0;
+            flash_cnt=0;
             TaskClean();
        }
        else
        {
-            static uint8 cnt =0,flash_cnt=0;
             if((cnt%10)==5)
             {
                show_sleep(OFF);
@@ -172,6 +148,42 @@ void TaskShow(void) //100ms
                work_state =  WORK_STATE_IDLE;
             }
        }
+    }
+
+}
+/*****************************************************************************
+ 函 数 名  : TaskShow
+ 功能描述  : 温度显示任务
+ 输入参数  : void
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
+
+ 修改历史      :
+  1.日    期   : 2017年5月25日 星期四
+    作    者   : zgj
+    修改内容   : 新生成函数
+
+*****************************************************************************/
+void TaskShow(void) //100ms
+{
+    if(work_state != WORK_MCU_UPDATE)
+    {
+        if((f6_err_cnt++)>=100)//10s
+        {
+            f6_err_cnt = 70;
+            Flg.err_f6_flg=1;
+            write_err_num(ERR_F6);
+        }
+        show_work();
+    	check_uart();
+        show_temp_flash();
+        if((key_switch_fag==0)&&(ShowPar.switch_flg==0)&&(incdec_fag == 0))
+        {
+            show_temp_actul();
+    	}
+    	clear_fun_show();
     }
 }
 
@@ -353,84 +365,87 @@ void TaskKeyPrs(void)  //10MS
 #else
     id =  Button_id&0Xff; //ff
 #endif
-    switch ( id )
+    if(work_state !=WORK_MCU_UPDATE)
     {
-        case TAP_VALVE:
+        switch ( id )
         {
-            TAP_EventHandler();
-            break;
-        }
-        case SHOWER_VALVE:
-        {
-            SHOWER_EventHandler();
-            break;
-        }
-        case DRAIN_VALVE:
-        {
-            DRAIN_EventHandler();
-            break;
-        }
-        case INC_VALVE:
-        {
-            INC_EventHandler();
-            break;
-        }
-        case DEC_VALVE:
-        {
-            DEC_EventHandler();
-            break;
-        }
-        case WATER_VALVE:
-        {
-            WATER_EventHandler();
-            break;
-        }
-        case AIR_VALVE:
-        {
-            AIR_EventHandler();
-            break;
-        }
-        case LAMP_VALVE:
-        {
-            LAMP_EventHandler();
-            break;
-        }
-		case CLEAN_VALVE:
-		{
-            //if((KeyCmd.req.dat[DAT_LIQUID]&0x01) == 0x01) //低液位
-		    {
-			    CLEAN_EventHandler();
-			}
-            break;
-		}
-        case LOCK_VALVE:
-        {
-            if((count++)>=300)
+            case TAP_VALVE:
+            {
+                TAP_EventHandler();
+                break;
+            }
+            case SHOWER_VALVE:
+            {
+                SHOWER_EventHandler();
+                break;
+            }
+            case DRAIN_VALVE:
+            {
+                DRAIN_EventHandler();
+                break;
+            }
+            case INC_VALVE:
+            {
+                INC_EventHandler();
+                break;
+            }
+            case DEC_VALVE:
+            {
+                DEC_EventHandler();
+                break;
+            }
+            case WATER_VALVE:
+            {
+                WATER_EventHandler();
+                break;
+            }
+            case AIR_VALVE:
+            {
+                AIR_EventHandler();
+                break;
+            }
+            case LAMP_VALVE:
+            {
+                LAMP_EventHandler();
+                break;
+            }
+    		case CLEAN_VALVE:
+    		{
+                //if((KeyCmd.req.dat[DAT_LIQUID]&0x01) == 0x01) //低液位
+    		    {
+    			    CLEAN_EventHandler();
+    			}
+                break;
+    		}
+            case LOCK_VALVE:
+            {
+                if((count++)>=300)
+                {
+                    count = 0;
+                    LOCK_EventHandler();
+                }
+               break;
+            }
+            case WIFI_VALVE:
+            {
+                if((count++)>=300)
+                {
+                    count = 0;
+                    WIFI_EventHandler();
+                }
+               break;
+            }
+            default:
             {
                 count = 0;
-                LOCK_EventHandler();
+                Flg.lock_flg =0;
+                time_clean = 0;
+                break;
             }
-           break;
         }
-        case WIFI_VALVE:
-        {
-            if((count++)>=300)
-            {
-                count = 0;
-                WIFI_EventHandler();
-            }
-           break;
-        }
-        default:
-        {
-            count = 0;
-            Flg.lock_flg =0;
-            time_clean = 0;
-            break;
-        }
+        judge_err_num();
+        IDLE_EventHandler();
     }
-    judge_err_num();
-    IDLE_EventHandler();
 }
 
 /* 添加 */
@@ -833,6 +848,7 @@ void INC_EventHandler(void)
                         key_adjust(key_arry[top], ShowPar.lamp_gear);
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:08
                         KeyCmd.req.dat[DAT_VALVE] = ShowPar.lamp_gear;
+                        ShowPar.light_state=ShowPar.lamp_gear;
                         dbg("lamp %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
                     }
                     break;
@@ -937,6 +953,7 @@ void DEC_EventHandler(void)
                        key_adjust(key_arry[top],ShowPar.lamp_gear);
                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:06
                        KeyCmd.req.dat[DAT_VALVE]=ShowPar.lamp_gear;
+                       ShowPar.light_state=ShowPar.lamp_gear;
                        dbg("lamp %x\r\n", KeyCmd.req.dat[DAT_VALVE]);
                     }
                     break;
@@ -1144,6 +1161,7 @@ void LAMP_EventHandler(void)
             {
                LED_LAMP_ON;
                KeyCmd.req.dat[DAT_VALVE] = ShowPar.lamp_gear;
+               ShowPar.light_state = ShowPar.lamp_gear;
                add(LAMP_VALVE);
                key_adjust(key_arry[top],ShowPar.lamp_gear);
             }
@@ -1151,6 +1169,7 @@ void LAMP_EventHandler(void)
             {
                 LED_LAMP_OFF;
                 KeyCmd.req.dat[DAT_VALVE] = LAMP_OFF;
+                ShowPar.light_state = LAMP_OFF;
                del(LAMP_VALVE);
                if(key_arry[top]==0)  //为空
                {
@@ -1230,8 +1249,10 @@ void WIFI_EventHandler(void) //10ms
 *****************************************************************************/
 void judge_err_num(void)
 {
+    static uint8 err_cnt =0;
     if((KeyCmd.req.dat[DAT_ERR_NUM]&0x7F) != 0x00)  //有错误
     {
+        err_cnt =0;
         if((key_switch_fag==0)&&(ShowPar.switch_flg==0)&&(incdec_fag == 0))
         {
             Flg.err_flg =1;
@@ -1245,11 +1266,14 @@ void judge_err_num(void)
     }
     else
     {
-        if(Flg.err_flg ==1)
+        err_cnt ++;
+        if((Flg.err_flg ==1)&&( err_cnt>=30)) // 3s
         {
+             err_cnt =0;
             Flg.err_flg =0;
             Flg.err_f1_flg =0;
             show_tempture(ShowPar.temp_val);
+            work_state = WORK_STATE_IDLE;
         }
     }
 }
@@ -1682,13 +1706,15 @@ void key_state_update(void)
                 break;
         }
     }
-    if(KeyCmd.rsp.dat[DAT_LIGHT]!=KeyCmd.req.dat[DAT_LIGHT])
+    if((KeyCmd.rsp.dat[DAT_LIGHT]!=KeyCmd.req.dat[DAT_LIGHT])
+        ||(KeyCmd.rsp.dat[DAT_LIGHT]!=ShowPar.light_state))
     {
         KeyCmd.req.dat[DAT_LIGHT] =KeyCmd.rsp.dat[DAT_LIGHT];
         time_cnt_del(LAMP_VALVE);
        if(KeyCmd.req.dat[DAT_LIGHT] == 0)
        {
             ShowPar.lamp_state = OFF;
+            ShowPar.light_state = OFF;
             LED_LAMP_OFF;
             del(LAMP_VALVE);
             if((key_arry[top]==0)&&(work_state == WORK_STATE_IDLE))  //为空
@@ -1703,6 +1729,7 @@ void key_state_update(void)
            ShowPar.lamp_state = ON;
            LED_LAMP_ON;
            ShowPar.lamp_gear =KeyCmd.rsp.dat[DAT_LIGHT];
+            ShowPar.light_state = ShowPar.lamp_gear;
            if(work_state == WORK_STATE_IDLE)
            {
                add(LAMP_VALVE);

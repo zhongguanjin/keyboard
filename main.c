@@ -26,7 +26,6 @@
 void Init_Sys(void)
 {
 	Init_MCU();
-
     BSP_init();
 	Init_UART1();
 	Init_TMR0();
@@ -65,6 +64,7 @@ void wdt_disable(void)
 *****************************************************************************/
 void main(void)
 {
+    wdt_disable();
 	Init_Sys();
     uart_bufInit(&uart1rx);
     wdt_enable();

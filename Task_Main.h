@@ -3,7 +3,7 @@
 
 #include "config.h"
 
-#define key_5  0
+#define key_5  1
 
 // 任务结构体：
 typedef struct _TASK_COMPONENTS
@@ -199,7 +199,8 @@ typedef struct
     uint16 temp_val ;                 // 当前温度
     uint8  air_gear;              //气按摩档位
     uint8  water_gear;            //水按摩档位
-    uint8  lamp_gear;                     //灯光颜色
+    uint8  lamp_gear;                     //灯光颜色 1-8  记住下发颜色记录
+    uint8  light_state;                 //灯光状态 0-8
     uint8  switch_flg: 1;               // 温度显示与状态切换标记  1-- 当前为开关状态
     union
     {
@@ -212,7 +213,7 @@ typedef struct
             uint8  dec_state: 1;
             uint8  water_state: 1;              // 水按摩状态
             uint8  air_state: 1;              // 气按摩状态
-            uint8  lamp_state: 1;               // 灯光状态
+            uint8  lamp_state: 1;               // 灯光状态 on - off
 
         };
         uint8 val;
