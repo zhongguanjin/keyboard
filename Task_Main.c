@@ -634,7 +634,7 @@ void show_temp_flash(void)//100ms
 *****************************************************************************/
 void TAP_EventHandler(void)
 {
-    if((work_state == WORK_STATE_IDLE)&&(Flg.err_f1_flg == 0))
+    if((work_state == WORK_STATE_IDLE)&&(Flg.err_f1_flg == 0)) //没有F1
     {
         if(KeyPressDown&TAP_VALVE) //第一次按下
          {
@@ -663,17 +663,23 @@ void TAP_EventHandler(void)
             dbg("tap,%x\r\n",KeyCmd.req.dat[DAT_VALVE]);
         }
     }
-    else if((Flg.err_f1_flg == 1)&&(KeyCmd.req.dat[DAT_ERR_NUM]&0x80))  //f1 err 时
+    //else if((Flg.err_f1_flg == 1)&&(KeyCmd.req.dat[DAT_ERR_NUM]&0x80))  //f1 err 时
+    else if(Flg.err_f1_flg == 1)  //f1 err 时
     {
+         if(KeyPressDown&TAP_VALVE)  //第一次触发
+        {
+            KeyPressDown = 0;
             time_cnt_del(TAP_VALVE);
             ShowPar.tap_state = STATE_ON;
+            LED_TAP_ON;
             Flg.err_f1_flg =0;
             ShowPar.temp_val = 380;
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
-            KeyCmd.req.dat[DAT_STATE] = ShowPar.val&0x03;
+            KeyCmd.req.dat[DAT_VALVE] = ShowPar.val&0x03;
             KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
             KeyCmd.req.dat[DAT_TEMP_L]  =  ShowPar.temp_val;
             show_tempture(ShowPar.temp_val);
+        }
      }
 }
 /*****************************************************************************
@@ -722,17 +728,23 @@ void SHOWER_EventHandler(void)
             dbg("shower,%x\r\n",KeyCmd.req.dat[DAT_VALVE]);
         }
     }
-    else if((Flg.err_f1_flg == 1)&&(KeyCmd.req.dat[DAT_ERR_NUM]&0x80))  //f1 err 时
+    //else if((Flg.err_f1_flg == 1)&&(KeyCmd.req.dat[DAT_ERR_NUM]&0x80))  //f1 err 时
+    else if(Flg.err_f1_flg == 1)  //f1 err 时
     {
-        time_cnt_del(SHOWER_VALVE);
-        ShowPar.shower_state = STATE_ON;
-        Flg.err_f1_flg =0;
-        ShowPar.temp_val = 380;
-        KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
-        KeyCmd.req.dat[DAT_STATE] = ShowPar.val&0x03;
-        KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
-        KeyCmd.req.dat[DAT_TEMP_L]  =  ShowPar.temp_val;
-        show_tempture(ShowPar.temp_val);
+        if(KeyPressDown&SHOWER_VALVE)  //第一次触发
+        {
+            KeyPressDown = 0;
+            time_cnt_del(SHOWER_VALVE);
+            ShowPar.shower_state = STATE_ON;
+            LED_SHOWER_ON;
+            Flg.err_f1_flg =0;
+            ShowPar.temp_val = 380;
+            KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
+            KeyCmd.req.dat[DAT_VALVE] = ShowPar.val&0x03;
+            KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
+            KeyCmd.req.dat[DAT_TEMP_L]  =  ShowPar.temp_val;
+            show_tempture(ShowPar.temp_val);
+        }
      }
 }
 /*****************************************************************************
@@ -1051,6 +1063,7 @@ void AIR_EventHandler(void)
                    Time_t.key_adj = 0;
                    key_switch_fag = 0;
                }
+               show_tempture(ShowPar.temp_val);
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
             dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
@@ -1106,6 +1119,7 @@ void WATER_EventHandler(void)
                     Time_t.key_adj = 0;
                     key_switch_fag = 0;
                 }
+                show_tempture(ShowPar.temp_val);
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
             dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
@@ -1176,6 +1190,7 @@ void LAMP_EventHandler(void)
                    Time_t.key_adj = 0;
                    key_switch_fag = 0;
                }
+               show_tempture(ShowPar.temp_val);
             }
             KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:06
             dbg("lamp %x\r\n", KeyCmd.req.dat[DAT_VALVE]);
@@ -1202,7 +1217,7 @@ void LOCK_EventHandler(void) //10ms
 {
     if((work_state == WORK_STATE_IDLE)&&(Flg.lock_flg ==0))
     {
-        Flg.lock_flg =1;
+        Flg.lock_flg =1;   //检测按键松开 0-松开，1-按下
         work_state = WORK_STATE_LOCK;
         KeyCmd.req.dat[DAT_FUN_CMD]= FUN_LOCK;            // 功能码：进水开关改变
         KeyCmd.req.dat[DAT_VALVE] = 0x01;
@@ -1249,10 +1264,8 @@ void WIFI_EventHandler(void) //10ms
 *****************************************************************************/
 void judge_err_num(void)
 {
-    static uint8 err_cnt =0;
     if((KeyCmd.req.dat[DAT_ERR_NUM]&0x7F) != 0x00)  //有错误
     {
-        err_cnt =0;
         if((key_switch_fag==0)&&(ShowPar.switch_flg==0)&&(incdec_fag == 0))
         {
             Flg.err_flg =1;
@@ -1266,10 +1279,8 @@ void judge_err_num(void)
     }
     else
     {
-        err_cnt ++;
-        if((Flg.err_flg ==1)&&( err_cnt>=30)) // 3s
+        if(Flg.err_flg ==1) // 3s
         {
-             err_cnt =0;
             Flg.err_flg =0;
             Flg.err_f1_flg =0;
             show_tempture(ShowPar.temp_val);
@@ -2044,6 +2055,7 @@ void Serial_Processing (void)
                     soft_chksum.uch[1]=KeyCmd.rsp.dat[6]; //
                     soft_chksum.uch[0]=KeyCmd.rsp.dat[7]; //
                     update_flg= 1;
+                    show_update();
                 }
                 else
                 {
@@ -2051,6 +2063,7 @@ void Serial_Processing (void)
                     KeyCmd.req.dat[DAT_VALVE] =0x02;
                     work_state = WORK_STATE_IDLE;
                     update_flg = 0;
+                    show_awaken();
                 }
             }
             break;

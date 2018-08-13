@@ -17,7 +17,7 @@ uint8 tab_num[10]={
 0x10, //9
 };
 
-uint8 tab_val[18]={
+uint8 tab_val[19]={
 0xc0,   //0
 0xf9,  // 1
 0xa4,  // 2
@@ -36,6 +36,7 @@ uint8 tab_val[18]={
 0x86, //15e-qi按摩
 0xc6, //16c-灯
 0x98, //17 q-
+0xC1, //18 u
 };
 
 
@@ -164,6 +165,14 @@ void show_clean() //清洁显示
     digiBuf[2] = 17;
 }
 
+void show_update(void)
+{
+    digi_flg = 1;
+    Flg.lcd_sleep_flg = 0;
+    digiBuf[0] = 18;
+    digiBuf[1] = 13;
+    digiBuf[2] = 14;
+}
 void show_wifi_pair(uint8 bai,uint8 shi,uint8 ge) //wifi pair 显示 ---
 {
     digi_flg = 1;
