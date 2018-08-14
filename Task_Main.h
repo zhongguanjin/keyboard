@@ -3,7 +3,7 @@
 
 #include "config.h"
 
-#define key_5  1
+#define key_5  0
 
 // 任务结构体：
 typedef struct _TASK_COMPONENTS

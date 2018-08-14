@@ -16,6 +16,7 @@ typedef struct
      uint8  key_adj;              //按键lamp,water,air使用+,-的使用时间
      uint8  incdec;                //+,-键led灯亮灭控制时间
      uint16 wifi_pair;
+     uint16 err_cnt;
 }tTime_T;
 
 tTime_T Time_t;
@@ -149,7 +150,6 @@ void clear_fun_show(void)
             }
        }
     }
-
 }
 /*****************************************************************************
  函 数 名  : TaskShow
@@ -545,6 +545,7 @@ void time_cnt_del( uint8 id)
 {
     Time_t.sleep = 0;
     Time_t.temp38 = 0;
+    Time_t.err_cnt=0;
     if((id==TAP_VALVE)||(id==SHOWER_VALVE))//龙头或花洒
     {
         Time_t.switch_cnt = 0;                  //on /off 间隔时间要清0
@@ -572,7 +573,6 @@ void time_cnt_del( uint8 id)
     {
        Time_t.switch_cnt =0;
     }
-
 }
 
 /*****************************************************************************
@@ -1262,14 +1262,18 @@ void WIFI_EventHandler(void) //10ms
     修改内容   : 新生成函数
 
 *****************************************************************************/
-void judge_err_num(void)
+void judge_err_num(void)//10ms
 {
     if((KeyCmd.req.dat[DAT_ERR_NUM]&0x7F) != 0x00)  //有错误
     {
         if((key_switch_fag==0)&&(ShowPar.switch_flg==0)&&(incdec_fag == 0))
         {
             Flg.err_flg =1;
-            write_err_num(KeyCmd.req.dat[DAT_ERR_NUM]&0x7F);
+            if((Time_t.err_cnt++)>=400)
+            {
+                Time_t.err_cnt=0;
+                write_err_num(KeyCmd.req.dat[DAT_ERR_NUM]&0x7F);
+            }
             if((KeyCmd.req.dat[DAT_ERR_NUM]&0x01) == 0x01)//f1错误
             {
                 Flg.err_f1_flg =1;
@@ -1279,8 +1283,9 @@ void judge_err_num(void)
     }
     else
     {
-        if(Flg.err_flg ==1) // 3s
+        if(Flg.err_flg ==1) //
         {
+            Time_t.err_cnt=0;
             Flg.err_flg =0;
             Flg.err_f1_flg =0;
             show_tempture(ShowPar.temp_val);
@@ -1501,7 +1506,7 @@ void show_work(void)
 *****************************************************************************/
 void show_temp_actul(void) // 100ms
 {
-    if(work_state == WORK_STATE_IDLE)
+    if((work_state == WORK_STATE_IDLE)&&(Flg.err_flg!=1))
     {
         if((ShowPar.tap_state == ON)||(ShowPar.shower_state == ON )) //出水状态
         {
@@ -1881,8 +1886,11 @@ void key_work_process( void )
                 }
                 break;
             }
+            default:
+            {
+                break;
+            }
     }
-
 }
 
 
