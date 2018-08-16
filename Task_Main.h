@@ -40,7 +40,6 @@ typedef struct _TASK_COMPONENTS
 #define   DRAIN_VALVE        0X04
 #define   INC_VALVE          0X08
 #define   DEC_VALVE          0X10
-
 #endif
 #define   WATER_VALVE        0X20
 #define   AIR_VALVE          0X40
@@ -201,7 +200,7 @@ typedef struct
     uint8  water_gear;            //水按摩档位
     uint8  lamp_gear;                     //灯光颜色 1-8  记住下发颜色记录
     uint8  light_state;                 //灯光状态 0-8
-    uint8  switch_flg: 1;               // 温度显示与状态切换标记  1-- 当前为开关状态
+    uint8  on_off_flg: 1;               // 温度显示与状态切换标记  1-- 当前为开关状态
     union
     {
         struct

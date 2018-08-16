@@ -271,6 +271,7 @@ void show_state(uint8 state) //×´Ì¬ÏÔÊ¾
 {
     digi_flg = 1;
     Flg.lcd_sleep_flg = 0;
+    ShowPar.on_off_flg = STATE_ON;
     if(state == STATE_ON)
     {
         digiBuf[0] = 0;//clear
