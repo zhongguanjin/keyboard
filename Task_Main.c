@@ -1422,15 +1422,21 @@ void child_lock_show(void)
 *****************************************************************************/
 void IDLE_EventHandler(void) //10ms
 {
-    if((Time_t.temp38 >= 30)&&(work_state == WORK_STATE_IDLE))  //温度保持30min钟 后切换成38度
+    static uint8 flg=0;
+    if((Time_t.temp38 == 30)&&(work_state == WORK_STATE_IDLE))  //温度保持30min钟 后切换成38度
     {
-        ShowPar.temp_val = 380;
-        KeyCmd.req.dat[DAT_FUN_CMD]= FUN_TEMP;        // 功能码：水龙头出水温度改变
-        KeyCmd.req.dat[DAT_VALVE]=0x00;
-        KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
-        KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
-        dbg("30min temp->38\r\n");
-        Time_t.temp38 = 0;
+        if(flg==0)
+        {
+            flg=1;
+            ShowPar.temp_val = 380;
+            KeyCmd.req.dat[DAT_FUN_CMD]= FUN_TEMP;        // 功能码：水龙头出水温度改变
+            KeyCmd.req.dat[DAT_VALVE]=0x00;
+            KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
+            KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
+            KeyCmd.req.dat[25]=0x01;  //告诉温控板复位
+            dbg("30min temp->38\r\n");
+            Time_t.temp38 = 0;
+        }
     }
     if(Time_t.sleep++ >=6000) // 1min钟时间到  时基10ms
     {
@@ -1442,6 +1448,7 @@ void IDLE_EventHandler(void) //10ms
        else
        {
             Time_t.temp38 = 0;
+            flg=0;
        }
        if(work_state == WORK_STATE_IDLE)
        {
@@ -2249,6 +2256,7 @@ void Serial_Processing (void)
     delay_ms(5);
     send_dat(&KeyCmd.req, BUF_SIZE);
     KeyCmd.req.dat[DAT_FUN_CMD]=0;          //清功能码
+    KeyCmd.req.dat[25]=0;
     if(bak_ok_flg == 1)//成功备份
     {
         bak_ok_flg=0;

@@ -501,7 +501,7 @@ void  my_printf(const char *pFormat, ...)
     result = DBG_CONSOLEBUF_SIZE - 1;
     for(i=0;i<result;i++)
     {
-    	uart_send_byte(rt_log_buf[i]);
+    	usart2_send_byte(rt_log_buf[i]);
     }
     va_end(ap);
 }

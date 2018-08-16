@@ -10,6 +10,8 @@
 #define RX_PIN  TRISC7  //定义数据通讯端口
 #define TX_PIN  TRISC6
 
+#define RX2_PIN  TRISG2  //定义数据通讯端口
+#define TX2_PIN  TRISG1
 
 /*****************************************************************************
  函 数 名  : usart1_init
@@ -77,6 +79,47 @@ void uart_send_byte(char dat)
 		continue;
 	}
 }
+
+void Init_UART2(void)
+{
+    RX2_PIN = 1;
+    TX2_PIN = 1;
+	//配置发送寄存器
+    TX2STAbits.TX9D=0;      //无奇偶校验位
+    TX2STAbits.TRMT=0;      //发送移位寄存器状态位  0-TSR 已满
+    TX2STAbits.BRGH = 1;
+    TX2STAbits.SYNC=0;
+    TX2STAbits.TXEN=1;
+    TX2STAbits.TX9=0;       //发送8位
+	//配置接收寄存器
+    RC2STAbits.RX9D=0;      //无奇偶校验位
+    RC2STAbits.OERR=0;
+    RC2STAbits.FERR=0;
+    RC2STAbits.ADDEN=0;
+    RC2STAbits.CREN=1;      //连续接收使能位
+    // RCSTA2bits.SREN=0;
+    RC2STAbits.RX9=0;       //接收8位
+    RC2STAbits.SPEN=1;      //串口使能位
+
+    SPBRG2 = SPBRGx_VAL;      //波特率对应初值
+    RC2IE = 1;                //USART1 接收中断允许位
+	TX2IE = 0;
+	RC2IF = 0;
+}
+
+
+
+
+void usart2_send_byte(char dat)
+{
+    TX2REG=dat;
+    while(!TX2STAbits.TRMT)		//TRMT=0:正在发送，TRMT=1:发送已完成
+	{
+		continue;
+	}
+}
+
+
 /*****************************************************************************
  函 数 名  : uart_send_str
  功能描述  : 发送字符函数

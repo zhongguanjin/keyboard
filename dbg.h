@@ -16,7 +16,9 @@ void  my_dbg(const char *pFormat, ...);
 //void my_print(uint8 *Data,...);
 
 
-#define dbg  (my_dbg("[%d]",__LINE__),my_dbg)
+#define dbg  (my_printf("[%d]",__LINE__),my_printf)
+
+//#define dbg  (my_dbg("[%d]",__LINE__),my_dbg)
 
 
 #endif
