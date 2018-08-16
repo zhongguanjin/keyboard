@@ -4,11 +4,16 @@
 #include <stdarg.h>
 #include "uart.h"
 #include "config.h"
+#include<stdlib.h>
+#include<string.h>
 
+#define MAX 6       //处理浮点数的小数部分的位数
 
 
 void  my_printf(const char *pFormat, ...);
-void  my_dbg(const char *pFormat, ...);
+extern void dbg_hex(char *buf,char len);
+
+
 
 
 
@@ -17,8 +22,6 @@ void  my_dbg(const char *pFormat, ...);
 
 
 #define dbg  (my_printf("[%d]",__LINE__),my_printf)
-
-//#define dbg  (my_dbg("[%d]",__LINE__),my_dbg)
 
 
 #endif

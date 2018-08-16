@@ -126,7 +126,9 @@ void clear_f6_cnt(void)
     f6_err_cnt = 0;
     if(Flg.err_f6_flg==1)  //出现f6时
     {
+        Flg.err_f6_flg=0;
         show_tempture(ShowPar.temp_val);
+        dbg("f6 err->temp\r\n");
     }
 }
 
@@ -158,6 +160,7 @@ void clear_fun_show(void)
         {
            flash_cnt=0;
            show_tempture(ShowPar.temp_val);
+           dbg("clean flash->idle\r\n");
            work_state =  WORK_STATE_IDLE;
         }
    }
@@ -328,6 +331,7 @@ void TaskClean() //100ms
                     KeyCmd.req.dat[DAT_FUN_CMD] = FUN_CLEAN; //功能码
                     KeyCmd.req.dat[DAT_VALVE] =0x00;
                     show_tempture(ShowPar.temp_val);
+                    dbg(" clean ok->idle\r\n");
                     clean_state = STATE_0;
                     work_state =WORK_STATE_IDLE;
                 }
@@ -643,6 +647,7 @@ void show_temp_flash(void)//100ms
         if((cnt%10)==9)
         {
             show_tempture(ShowPar.temp_val);
+            dbg("temp max min flash\r\n");
             flash_cnt++;
         }
         cnt++;
@@ -680,6 +685,7 @@ void TAP_EventHandler(void)
             if(Flg.lcd_sleep_flg == 1)
             {
                 show_awaken();
+                dbg("wake lcd\r\n");
                 return;
             }
             ShowPar.tap_state ^= 0x01;
@@ -716,6 +722,7 @@ void TAP_EventHandler(void)
             KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
             KeyCmd.req.dat[DAT_TEMP_L]  =  ShowPar.temp_val;
             show_tempture(ShowPar.temp_val);
+             dbg("f1 err inflow\r\n");
         }
      }
 }
@@ -744,6 +751,7 @@ void SHOWER_EventHandler(void)
             if(Flg.lcd_sleep_flg == 1)
             {
                 show_awaken();
+                                dbg("wake lcd\r\n");
                 return;
             }
             ShowPar.shower_state ^= 0x01;
@@ -780,6 +788,7 @@ void SHOWER_EventHandler(void)
             KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
             KeyCmd.req.dat[DAT_TEMP_L]  =  ShowPar.temp_val;
             show_tempture(ShowPar.temp_val);
+            dbg("f1 err inflow\r\n");
         }
      }
 }
@@ -808,6 +817,7 @@ void DRAIN_EventHandler(void)
             if(Flg.lcd_sleep_flg == 1)
             {
                 show_awaken();
+                                dbg("wake lcd\r\n");
                 return ;
             }
             ShowPar.drain_state ^= 0x01;
@@ -853,6 +863,7 @@ void INC_EventHandler(void)
         if(Flg.lcd_sleep_flg == 1)
         {
             show_awaken();
+                            dbg("wake lcd\r\n");
             return;
         }
         switch (key_arry[top])
@@ -965,6 +976,7 @@ void DEC_EventHandler(void)
         if(Flg.lcd_sleep_flg == 1)//休眠唤醒
         {
             show_awaken();
+                            dbg("wake lcd\r\n");
             return;
         }
         switch (key_arry[top])
@@ -1076,6 +1088,7 @@ void AIR_EventHandler(void)
             if(Flg.lcd_sleep_flg ==1)
             {
                 show_awaken();
+                                dbg("wake lcd\r\n");
                 return ;
             }
             ShowPar.air_state ^= 0x01;
@@ -1132,6 +1145,7 @@ void WATER_EventHandler(void)
             if(Flg.lcd_sleep_flg ==1)
             {
                 show_awaken();
+                                dbg("wake lcd\r\n");
                 return ;
             }
             ShowPar.water_state ^= 0x01;
@@ -1203,6 +1217,7 @@ void LAMP_EventHandler(void)
             if(Flg.lcd_sleep_flg ==1)
             {
                 show_awaken();
+                                dbg("wake lcd\r\n");
                 return ;
             }
             ShowPar.lamp_state ^= 0x01;
@@ -1262,6 +1277,7 @@ void LOCK_EventHandler(void) //10ms
     {
        Flg.lock_flg =1;
        show_awaken();
+                       dbg("wake lcd\r\n");
        work_state = WORK_STATE_IDLE;
        KeyCmd.req.dat[DAT_FUN_CMD]= FUN_LOCK;            // 功能码：进水开关改变
        KeyCmd.req.dat[DAT_VALVE] = 0x00;
@@ -1324,6 +1340,7 @@ void judge_err_num(void)//10ms
             Flg.err_flg =0;
             Flg.err_f1_flg =0;
             show_tempture(ShowPar.temp_val);
+            dbg("err->idle\r\n");
             work_state = WORK_STATE_IDLE;
         }
     }
@@ -1371,6 +1388,7 @@ void wifi_pair_pro(void)
         dbg("wifi pair -> idle\r\n");
         work_state = WORK_STATE_IDLE;
         show_tempture(ShowPar.temp_val);
+        dbg("wifi pair over time\r\n");
     }
 }
 
@@ -1527,6 +1545,7 @@ void show_work(void)
             {
                 show_tempture(ShowPar.temp_val);
             }
+            dbg("on off->temp\r\n");
          }
     }
     if(1 == key_adjust_fag)
@@ -1588,6 +1607,7 @@ void show_temp_actul(void) // 100ms
             }
             if((Time_t.temp_switch >= 200)&&(Flg.temp_disreach_flg == 0))// 20s
             {
+                dbg("two temp flash\r\n");
                 if((cnt%24)==0)
                 {
                     show_tempture(pre_tem);
@@ -1644,6 +1664,7 @@ void show_temp_actul(void) // 100ms
             {
                 temp_count = 0;
                 show_tempture( ShowPar.temp_val);
+                dbg("two temp ok\r\n");
             }
         }
     }
@@ -1704,6 +1725,7 @@ void sync_temp_show(void)
         &&(incdec_fag == 0)&&(Flg.err_flg!=1))           //显示处于空闲时
     {
         show_tempture(ShowPar.temp_val);
+        dbg("chk\r\n");
     }
 }
 
@@ -1752,6 +1774,7 @@ void key_massage_sync(void)
                 Time_t.key_adj = 0;
                 key_adjust_fag = 0;
                 sync_temp_show();
+                dbg("sync water off\r\n");
             }
         }
     }
@@ -1781,6 +1804,7 @@ void key_massage_sync(void)
                 Time_t.key_adj = 0;
                 key_adjust_fag = 0;
                 sync_temp_show();
+                dbg("sync air off\r\n");
             }
         }
     }
@@ -1819,6 +1843,7 @@ void key_lamp_sync(void)
                 Time_t.key_adj = 0;
                 key_adjust_fag = 0;
                 sync_temp_show();
+                dbg("sync lamp off\r\n");
             }
        }
        else
@@ -1949,6 +1974,7 @@ void key_state_sync(void)
         else
         {
             sync_temp_show();
+            dbg("sync lock->idle\r\n");
             work_state =WORK_STATE_IDLE;
         }
     }
@@ -1964,6 +1990,7 @@ void key_state_sync(void)
        else
        {
            sync_temp_show();
+           dbg("sync clear->idle\r\n");
            work_state =WORK_STATE_IDLE;
        }
     }
@@ -1980,6 +2007,7 @@ void key_state_sync(void)
         {
            Time_t.wifi_pair =0;
            work_state = WORK_STATE_IDLE;
+           dbg("sync pair->idle\r\n");
            sync_temp_show();
         }
     }
@@ -2016,6 +2044,7 @@ void key_temp_sync( void )
                 if(Flg.lcd_sleep_flg == 0)
                 {
                     sync_temp_show();
+                    dbg("sync temp\r\n");
                     Time_t.sleep = 0; //清零重新等一分钟
                 }
             }
@@ -2383,6 +2412,7 @@ void BSP_init(void)
     KeyCmd.req.end_num1 = 0x0F;
     KeyCmd.req.end_num2 = 0x04;
     show_tempture( ShowPar.temp_val);
+    dbg("temp init\r\n");
     work_state = WORK_STATE_IDLE;
 }
 

@@ -55,34 +55,10 @@ void Init_UART1(void)
 	TXIE = 0;
 	RCIF = 0;
 }
-/*****************************************************************************
- 函 数 名  : usart1_send_byte
- 功能描述  : USART发送单个字节
- 输入参数  : char ch要发送的字符
- 输出参数  : 无
- 返 回 值  :
- 调用函数  :
- 被调函数  :
-
- 修改历史      :
-  1.日    期   : 2016年5月13日
- 作    者  : SJY
- 修改内容  : 新生成函数
-
-*****************************************************************************/
-
-void uart_send_byte(char dat)
-{
-	TXREG=dat;
-    while(!TX1STAbits.TRMT)		//TRMT=0:正在发送，TRMT=1:发送已完成
-	{
-		continue;
-	}
-}
 
 void Init_UART2(void)
 {
-    RX2_PIN = 1;
+    //RX2_PIN = 1;
     TX2_PIN = 1;
 	//配置发送寄存器
     TX2STAbits.TX9D=0;      //无奇偶校验位
@@ -102,7 +78,7 @@ void Init_UART2(void)
     RC2STAbits.SPEN=1;      //串口使能位
 
     SPBRG2 = SPBRGx_VAL;      //波特率对应初值
-    RC2IE = 1;                //USART1 接收中断允许位
+    RC2IE = 0;                //USART1 接收中断允许位
 	TX2IE = 0;
 	RC2IF = 0;
 }
@@ -119,7 +95,30 @@ void usart2_send_byte(char dat)
 	}
 }
 
+/*****************************************************************************
+ 函 数 名  : usart1_send_byte
+ 功能描述  : USART发送单个字节
+ 输入参数  : char ch要发送的字符
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
 
+ 修改历史      :
+  1.日    期   : 2016年5月13日
+ 作    者  : SJY
+ 修改内容  : 新生成函数
+
+*****************************************************************************/
+
+void uart_send_byte(char dat)
+{
+    TXREG=dat;
+    while(!TX1STAbits.TRMT)		//TRMT=0:正在发送，TRMT=1:发送已完成
+	{
+		continue;
+	}
+}
 /*****************************************************************************
  函 数 名  : uart_send_str
  功能描述  : 发送字符函数
@@ -174,10 +173,6 @@ void send_dat(void *p,uint8 len)
             temp++;
         }
     }
-    NOP();
-    NOP();
-    NOP();
-    NOP();
     delay_ms(5);
     M485_EN_L;
 }
