@@ -144,7 +144,7 @@ void printfloat(const float fl)
 
 void my_printf(const char *format,...)
 {
-#if 1
+#if dbglog
     va_list arg;
     char ch;
     int in;

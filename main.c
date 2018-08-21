@@ -5,7 +5,7 @@
 #include "uart.h"
 #include "my_console.h"
 #include "LCD.h"
-
+#include "dbg.h"
 
 
 /*****************************************************************************
@@ -28,7 +28,9 @@ void Init_Sys(void)
 	Init_MCU();
     BSP_init();
 	Init_UART1();
+#if dbglog
 	Init_UART2();
+#endif
 	Init_TMR0();
 	//Init_TMR6();
 	GIE		= 1;
@@ -45,7 +47,6 @@ void wdt_enable(void)
 void wdt_disable(void)
 {
     SWDTEN =0;
-    //WDTCONbits.WDTPS = 0x0B;
 }
 
 /*****************************************************************************
@@ -76,7 +77,6 @@ void main(void)
         {
             clear_f6_cnt();
             Flg.frame_ok_fag = 0;
-            //delay_ms(10);
             Serial_Processing();
         }
         TaskProcess();            // 任务处理
@@ -101,19 +101,6 @@ void main(void)
 *****************************************************************************/
 void interrupt ISR(void)
 {
-/*
-	if (TMR6IF && TMR6IE) // 100us 中断一次
-	{
-	    TMR6IF = 0;
-        static uint8  led_count = 0;
-        led_count ++ ;
-        if(led_count>=2)
-        {
-            led_count = 0;
-            led_scan();
-        }
-	}
-	*/
     if(TMR0IF && TMR0IE)     // 1ms中断一次
     {
         TMR0IF = 0;

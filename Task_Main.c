@@ -751,7 +751,6 @@ void SHOWER_EventHandler(void)
             if(Flg.lcd_sleep_flg == 1)
             {
                 show_awaken();
-                                dbg("wake lcd\r\n");
                 return;
             }
             ShowPar.shower_state ^= 0x01;
@@ -817,7 +816,6 @@ void DRAIN_EventHandler(void)
             if(Flg.lcd_sleep_flg == 1)
             {
                 show_awaken();
-                                dbg("wake lcd\r\n");
                 return ;
             }
             ShowPar.drain_state ^= 0x01;
@@ -863,7 +861,6 @@ void INC_EventHandler(void)
         if(Flg.lcd_sleep_flg == 1)
         {
             show_awaken();
-                            dbg("wake lcd\r\n");
             return;
         }
         switch (key_arry[top])
@@ -976,7 +973,6 @@ void DEC_EventHandler(void)
         if(Flg.lcd_sleep_flg == 1)//休眠唤醒
         {
             show_awaken();
-                            dbg("wake lcd\r\n");
             return;
         }
         switch (key_arry[top])
@@ -1088,7 +1084,6 @@ void AIR_EventHandler(void)
             if(Flg.lcd_sleep_flg ==1)
             {
                 show_awaken();
-                                dbg("wake lcd\r\n");
                 return ;
             }
             ShowPar.air_state ^= 0x01;
@@ -1145,7 +1140,6 @@ void WATER_EventHandler(void)
             if(Flg.lcd_sleep_flg ==1)
             {
                 show_awaken();
-                                dbg("wake lcd\r\n");
                 return ;
             }
             ShowPar.water_state ^= 0x01;
@@ -1217,7 +1211,6 @@ void LAMP_EventHandler(void)
             if(Flg.lcd_sleep_flg ==1)
             {
                 show_awaken();
-                                dbg("wake lcd\r\n");
                 return ;
             }
             ShowPar.lamp_state ^= 0x01;
@@ -1277,7 +1270,6 @@ void LOCK_EventHandler(void) //10ms
     {
        Flg.lock_flg =1;
        show_awaken();
-                       dbg("wake lcd\r\n");
        work_state = WORK_STATE_IDLE;
        KeyCmd.req.dat[DAT_FUN_CMD]= FUN_LOCK;            // 功能码：进水开关改变
        KeyCmd.req.dat[DAT_VALVE] = 0x00;
@@ -1385,7 +1377,6 @@ void wifi_pair_pro(void)
         Time_t.wifi_pair =0;
         KeyCmd.req.dat[DAT_FUN_CMD]= FUN_WIFI;            // 功能码：wifi pair
         KeyCmd.req.dat[DAT_VALVE] = 0x00;
-        dbg("wifi pair -> idle\r\n");
         work_state = WORK_STATE_IDLE;
         show_tempture(ShowPar.temp_val);
         dbg("wifi pair over time\r\n");
@@ -1593,21 +1584,19 @@ void show_work(void)
 void show_temp_actul(void) // 100ms
 {
     uint16 pre_tem=0;
-    static uint8 temp_count =0;
-    static uint8 cnt1 =0,cnt=0;
+    static uint8 cnt1 =0,cnt=0,show_flg=0;
     if((ShowPar.tap_state == ON)||(ShowPar.shower_state == ON )) //出水状态
     {
         pre_tem = KeyCmd.req.dat[DAT_TEM_OUT]*10;
         if((pre_tem < ShowPar.temp_val-20)||((pre_tem > ShowPar.temp_val+20))) //达不到预设温度
         {
-            temp_count = 0;
+            show_flg=0;
             if(Time_t.temp_switch<1000)
             {
                 Time_t.temp_switch++;
             }
             if((Time_t.temp_switch >= 200)&&(Flg.temp_disreach_flg == 0))// 20s
             {
-                dbg("two temp flash\r\n");
                 if((cnt%24)==0)
                 {
                     show_tempture(pre_tem);
@@ -1656,23 +1645,16 @@ void show_temp_actul(void) // 100ms
                 }
             }
         }
-        else
+        else if(show_flg==0)
         {
+            cnt=0;
+            cnt1=0;
+            show_flg=1;
             Flg.temp_disreach_flg =0;
             Time_t.temp_switch = 0;
-            if((temp_count++)>=5)
-            {
-                temp_count = 0;
-                show_tempture( ShowPar.temp_val);
-                dbg("two temp ok\r\n");
-            }
+            show_tempture( ShowPar.temp_val);
+            dbg("2 temp ok\r\n");
         }
-    }
-    else
-    {
-        temp_count = 0;
-        cnt=0;
-        cnt1=0;
     }
 }
 
