@@ -3,7 +3,7 @@
 
 #include "config.h"
 
-#define key_5  1
+#define key_5  0
 
 // 任务结构体：
 typedef struct _TASK_COMPONENTS
@@ -17,7 +17,7 @@ typedef struct _TASK_COMPONENTS
 
 /*按键功能定义*/
 
-#if 0 //key_5
+#if key_5
 
 #define   ALL_CLOSE          0X00
 #define   TAP_VALVE          0X04

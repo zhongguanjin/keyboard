@@ -60,7 +60,7 @@ enum
 //°´¼üµÆ
 #define     LED_SFIO_OUT                        ( TRISF = 0 )
 
-#if  0//key_5
+#if  key_5
 #define     LED_TAP_OFF                         ( LATF5 = 0 )
 #define     LED_TAP_ON                          ( LATF5 = 1 )
 #define     LED_SHOWER_OFF                      ( LATF6 = 0 )
