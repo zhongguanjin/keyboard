@@ -2179,6 +2179,7 @@ void get_hex_file(void)
 void Serial_Processing (void)
 {
     memcpy(&KeyCmd.rsp,Recv_Buf,sizeof(KeyCmd.rsp));
+    static uint8 update_overtime=10;
     uint8 cmd = KeyCmd.rsp.dat[DAT_FUN_CMD];
     switch(cmd)
     {
@@ -2195,7 +2196,7 @@ void Serial_Processing (void)
             }
             else
             {
-                if(KeyCmd.rsp.dat[3]>soft_version) //大于当前版本号
+                if(KeyCmd.rsp.dat[3] > soft_version) //大于当前版本号
                 {
                     KeyCmd.req.dat[DAT_FUN_CMD] =0xE1;
                     KeyCmd.req.dat[DAT_VALVE] =0x01;
@@ -2227,6 +2228,7 @@ void Serial_Processing (void)
                     KeyCmd.req.dat[DAT_VALVE] =0x03;
                     return ;
                 }
+                update_overtime=10;
                 get_hex_file();
             }
             break;
@@ -2259,9 +2261,16 @@ void Serial_Processing (void)
                 KeyCmd.req.dat[DAT_TEM_PRE] = KeyCmd.rsp.dat[DAT_TEM_PRE];     //浴缸水温
                 KeyCmd.req.dat[DAT_MAS_TIME] = KeyCmd.rsp.dat[DAT_MAS_TIME];     //按摩时间
             }
+            else
+            {
+                update_overtime--;
+                if(update_overtime=0)
+                {
+                    work_state = WORK_STATE_IDLE;
+                }
+            }
             break;
         }
-
     }
     KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
     delay_ms(5);
