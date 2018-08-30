@@ -128,7 +128,6 @@ void clear_f6_cnt(void)
     {
         Flg.err_f6_flg=0;
         show_tempture(ShowPar.temp_val);
-        dbg("f6 err->temp\r\n");
     }
 }
 
@@ -160,7 +159,6 @@ void clear_fun_show(void)
         {
            flash_cnt=0;
            show_tempture(ShowPar.temp_val);
-           dbg("clean flash->idle\r\n");
            work_state =  WORK_STATE_IDLE;
         }
    }
@@ -189,6 +187,7 @@ void TaskShow(void) //100ms
             f6_err_cnt = 70;
             Flg.err_f6_flg=1;
             write_err_num(ERR_F6);
+            work_state = WORK_STATE_IDLE; //2018-8-30 zgj
         }
     	check_uart();
     }
@@ -331,7 +330,6 @@ void TaskClean() //100ms
                     KeyCmd.req.dat[DAT_FUN_CMD] = FUN_CLEAN; //功能码
                     KeyCmd.req.dat[DAT_VALVE] =0x00;
                     show_tempture(ShowPar.temp_val);
-                    dbg(" clean ok->idle\r\n");
                     clean_state = STATE_0;
                     work_state =WORK_STATE_IDLE;
                 }
@@ -647,7 +645,6 @@ void show_temp_flash(void)//100ms
         if((cnt%10)==9)
         {
             show_tempture(ShowPar.temp_val);
-            dbg("temp max min flash\r\n");
             flash_cnt++;
         }
         cnt++;
@@ -685,7 +682,6 @@ void TAP_EventHandler(void)
             if(Flg.lcd_sleep_flg == 1)
             {
                 show_awaken();
-                dbg("wake lcd\r\n");
                 return;
             }
             ShowPar.tap_state ^= 0x01;
@@ -703,7 +699,6 @@ void TAP_EventHandler(void)
             KeyCmd.req.dat[DAT_VALVE] =  ShowPar.val&0x03; //数据码 龙头状态
             time_cnt_del(TAP_VALVE);
             show_state(ShowPar.tap_state);
-            dbg("tap,%x\r\n",KeyCmd.req.dat[DAT_VALVE]);
         }
     }
     //else if((Flg.err_f1_flg == 1)&&(KeyCmd.req.dat[DAT_ERR_NUM]&0x80))  //f1 err 时
@@ -722,7 +717,6 @@ void TAP_EventHandler(void)
             KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
             KeyCmd.req.dat[DAT_TEMP_L]  =  ShowPar.temp_val;
             show_tempture(ShowPar.temp_val);
-             dbg("f1 err inflow\r\n");
         }
      }
 }
@@ -768,7 +762,6 @@ void SHOWER_EventHandler(void)
             KeyCmd.req.dat[DAT_VALVE] =  ShowPar.val&0x03; //数据码 花洒
             time_cnt_del(SHOWER_VALVE);
             show_state(ShowPar.shower_state);
-            dbg("shower,%x\r\n",KeyCmd.req.dat[DAT_VALVE]);
         }
     }
     //else if((Flg.err_f1_flg == 1)&&(KeyCmd.req.dat[DAT_ERR_NUM]&0x80))  //f1 err 时
@@ -787,7 +780,6 @@ void SHOWER_EventHandler(void)
             KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
             KeyCmd.req.dat[DAT_TEMP_L]  =  ShowPar.temp_val;
             show_tempture(ShowPar.temp_val);
-            dbg("f1 err inflow\r\n");
         }
      }
 }
@@ -831,7 +823,6 @@ void DRAIN_EventHandler(void)
             KeyCmd.req.dat[DAT_VALVE] = ShowPar.drain_state; //数据码 排水
             time_cnt_del(DRAIN_VALVE);
             show_state(ShowPar.drain_state);
-            dbg("drainage,%x\r\n",KeyCmd.req.dat[DAT_VALVE]);
         }
     }
 }
@@ -904,7 +895,6 @@ void INC_EventHandler(void)
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:08
                         KeyCmd.req.dat[DAT_VALVE] = ShowPar.lamp_gear;
                         ShowPar.light_state=ShowPar.lamp_gear;
-                        dbg("lamp %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
                     }
                     break;
                 }
@@ -922,7 +912,6 @@ void INC_EventHandler(void)
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:05
                         KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
                                 +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5); //数据码
-                        dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
                     }
                     break;
                 }
@@ -940,7 +929,6 @@ void INC_EventHandler(void)
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:07
                         KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
                                 +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5); //数据码
-                        dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
                     }
                     break;
                 }
@@ -1009,7 +997,6 @@ void DEC_EventHandler(void)
                        KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:06
                        KeyCmd.req.dat[DAT_VALVE]=ShowPar.lamp_gear;
                        ShowPar.light_state=ShowPar.lamp_gear;
-                       dbg("lamp %x\r\n", KeyCmd.req.dat[DAT_VALVE]);
                     }
                     break;
                 }
@@ -1030,7 +1017,6 @@ void DEC_EventHandler(void)
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:07
                         KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
                                 +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
-                        dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
                     }
                     break;
                 }
@@ -1051,7 +1037,6 @@ void DEC_EventHandler(void)
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:07
                         KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
                                 +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
-                        dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
                     }
                     break;
                 }
@@ -1109,7 +1094,6 @@ void AIR_EventHandler(void)
                show_tempture(ShowPar.temp_val);
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
-            dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
         }
     }
 
@@ -1165,7 +1149,6 @@ void WATER_EventHandler(void)
                 show_tempture(ShowPar.temp_val);
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_MASSAGE;            // 功能码：07
-            dbg("massage %x\r\n",KeyCmd.req.dat[DAT_VALVE]);
         }
     }
 	if(work_state == WORK_STATE_CLEAN)
@@ -1180,7 +1163,6 @@ void WATER_EventHandler(void)
             Cstate_time = 0;
     		show_tempture(ShowPar.temp_val);
             clean_state = STATE_0;
-    		dbg("clean cancel\r\n");
 		}
 	}
 
@@ -1236,7 +1218,6 @@ void LAMP_EventHandler(void)
                show_tempture(ShowPar.temp_val);
             }
             KeyCmd.req.dat[DAT_FUN_CMD] =FUN_LIGHT;  // 功能码:06
-            dbg("lamp %x\r\n", KeyCmd.req.dat[DAT_VALVE]);
         }
     }
 }
@@ -1264,7 +1245,6 @@ void LOCK_EventHandler(void) //10ms
         work_state = WORK_STATE_LOCK;
         KeyCmd.req.dat[DAT_FUN_CMD]= FUN_LOCK;            // 功能码：进水开关改变
         KeyCmd.req.dat[DAT_VALVE] = 0x01;
-        dbg("idle -> lock,%x\r\n",KeyCmd.req.dat[DAT_VALVE]);
     }
     if((work_state == WORK_STATE_LOCK)&&(Flg.lock_flg ==0))
     {
@@ -1273,7 +1253,6 @@ void LOCK_EventHandler(void) //10ms
        work_state = WORK_STATE_IDLE;
        KeyCmd.req.dat[DAT_FUN_CMD]= FUN_LOCK;            // 功能码：进水开关改变
        KeyCmd.req.dat[DAT_VALVE] = 0x00;
-       dbg("lock -> idle\r\n");
     }
 }
 
@@ -1286,7 +1265,6 @@ void WIFI_EventHandler(void) //10ms
         KeyCmd.req.dat[DAT_FUN_CMD]= FUN_WIFI;            // 功能码：wifi pair
         KeyCmd.req.dat[DAT_VALVE] = 0x01;
 		KeyCmd.req.dat[DAT_WIFI_PAIR] = 0x00;
-        dbg("idle -> wifi pair\r\n");
     }
 }
 
@@ -1332,12 +1310,10 @@ void judge_err_num(void)//10ms
             Flg.err_flg =0;
             Flg.err_f1_flg =0;
             show_tempture(ShowPar.temp_val);
-            dbg("err->idle\r\n");
             work_state = WORK_STATE_IDLE;
         }
     }
 }
-
 /*****************************************************************************
  函 数 名  : wifi_pair_pro
  功能描述  : wifi 配对处理
@@ -1364,7 +1340,10 @@ void wifi_pair_pro(void)
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;  // 功能码：进水开关改变
             KeyCmd.req.dat[DAT_VALVE] =  ShowPar.val&0x03; //数据码 龙头状态
         }
-        else
+    }
+    if(Time_t.wifi_pair==20)
+    {
+        if(ShowPar.drain_state==ON)
         {
             ShowPar.drain_state=OFF;
             LED_DRAIN_OFF;
@@ -1379,7 +1358,6 @@ void wifi_pair_pro(void)
         KeyCmd.req.dat[DAT_VALVE] = 0x00;
         work_state = WORK_STATE_IDLE;
         show_tempture(ShowPar.temp_val);
-        dbg("wifi pair over time\r\n");
     }
 }
 
@@ -1443,7 +1421,6 @@ void IDLE_EventHandler(void) //10ms
             KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
             KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
             KeyCmd.req.dat[25]=0x01;  //告诉温控板复位
-            dbg("30min temp->38\r\n");
             Time_t.temp38 = 0;
         }
     }
@@ -1461,10 +1438,8 @@ void IDLE_EventHandler(void) //10ms
        }
        if(work_state == WORK_STATE_IDLE)
        {
-            dbg("1 min get\r\n");
             if((ShowPar.val&0xff)== OFF)
             {
-                dbg("sleep\r\n");
                 show_sleep(ON);
             }
        }
@@ -1536,7 +1511,6 @@ void show_work(void)
             {
                 show_tempture(ShowPar.temp_val);
             }
-            dbg("on off->temp\r\n");
          }
     }
     if(1 == key_adjust_fag)
@@ -1551,7 +1525,6 @@ void show_work(void)
                 show_tempture(ShowPar.temp_val);
             }
             clear();
-            dbg("clear_adj,key_arry[%d]=%x\r\n",top,key_arry[top]);
         }
     }
     if(1 == incdec_fag)
@@ -1653,7 +1626,6 @@ void show_temp_actul(void) // 100ms
             Flg.temp_disreach_flg =0;
             Time_t.temp_switch = 0;
             show_tempture( ShowPar.temp_val);
-            dbg("2 temp ok\r\n");
         }
     }
 }
@@ -1707,7 +1679,6 @@ void sync_temp_show(void)
         &&(incdec_fag == 0)&&(Flg.err_flg!=1))           //显示处于空闲时
     {
         show_tempture(ShowPar.temp_val);
-        dbg("chk\r\n");
     }
 }
 
@@ -1756,7 +1727,6 @@ void key_massage_sync(void)
                 Time_t.key_adj = 0;
                 key_adjust_fag = 0;
                 sync_temp_show();
-                dbg("sync water off\r\n");
             }
         }
     }
@@ -1786,7 +1756,6 @@ void key_massage_sync(void)
                 Time_t.key_adj = 0;
                 key_adjust_fag = 0;
                 sync_temp_show();
-                dbg("sync air off\r\n");
             }
         }
     }
@@ -1825,7 +1794,6 @@ void key_lamp_sync(void)
                 Time_t.key_adj = 0;
                 key_adjust_fag = 0;
                 sync_temp_show();
-                dbg("sync lamp off\r\n");
             }
        }
        else
@@ -1956,7 +1924,6 @@ void key_state_sync(void)
         else
         {
             sync_temp_show();
-            dbg("sync lock->idle\r\n");
             work_state =WORK_STATE_IDLE;
         }
     }
@@ -1972,7 +1939,6 @@ void key_state_sync(void)
        else
        {
            sync_temp_show();
-           dbg("sync clear->idle\r\n");
            work_state =WORK_STATE_IDLE;
        }
     }
@@ -1989,7 +1955,6 @@ void key_state_sync(void)
         {
            Time_t.wifi_pair =0;
            work_state = WORK_STATE_IDLE;
-           dbg("sync pair->idle\r\n");
            sync_temp_show();
         }
     }
@@ -2026,7 +1991,6 @@ void key_temp_sync( void )
                 if(Flg.lcd_sleep_flg == 0)
                 {
                     sync_temp_show();
-                    dbg("sync temp\r\n");
                     Time_t.sleep = 0; //清零重新等一分钟
                 }
             }
@@ -2178,8 +2142,8 @@ void get_hex_file(void)
 *****************************************************************************/
 void Serial_Processing (void)
 {
+    static uint8 UpdateOverTicks = 10;
     memcpy(&KeyCmd.rsp,Recv_Buf,sizeof(KeyCmd.rsp));
-    static uint8 update_overtime=10;
     uint8 cmd = KeyCmd.rsp.dat[DAT_FUN_CMD];
     switch(cmd)
     {
@@ -2205,7 +2169,6 @@ void Serial_Processing (void)
                     soft_chksum.uch[1]=KeyCmd.rsp.dat[6]; //
                     soft_chksum.uch[0]=KeyCmd.rsp.dat[7]; //
                     update_flg= 1;
-                    //show_update();
                 }
                 else
                 {
@@ -2213,7 +2176,6 @@ void Serial_Processing (void)
                     KeyCmd.req.dat[DAT_VALVE] =0x02;
                     work_state = WORK_STATE_IDLE;
                     update_flg = 0;
-                    //show_awaken();
                 }
             }
             break;
@@ -2228,7 +2190,7 @@ void Serial_Processing (void)
                     KeyCmd.req.dat[DAT_VALVE] =0x03;
                     return ;
                 }
-                update_overtime=10;
+                UpdateOverTicks=10;
                 get_hex_file();
             }
             break;
@@ -2263,8 +2225,7 @@ void Serial_Processing (void)
             }
             else
             {
-                update_overtime--;
-                if(update_overtime=0)
+                if((UpdateOverTicks--)==0)
                 {
                     work_state = WORK_STATE_IDLE;
                 }
@@ -2324,7 +2285,6 @@ void set_temp_val_dec(uint8 val)
     KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
     KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
     show_tempture( ShowPar.temp_val);
-    dbg("temp:%d\r\n",ShowPar.temp_val);
 }
 
 /*****************************************************************************
@@ -2362,7 +2322,6 @@ void set_temp_val_inc(uint8 val)
     KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
     KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
     show_tempture( ShowPar.temp_val);
-    dbg("temp:%d\r\n",ShowPar.temp_val);
 }
 
 
