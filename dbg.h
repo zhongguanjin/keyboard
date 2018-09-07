@@ -9,7 +9,7 @@
 
 #define MAX 6       //处理浮点数的小数部分的位数
 
-#define dbglog  1
+#define dbglog  0
 
 void  my_printf(const char *pFormat, ...);
 extern void dbg_hex(char *buf,char len);

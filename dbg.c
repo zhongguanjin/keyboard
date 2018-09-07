@@ -40,12 +40,14 @@ char *itoa_my(long value,char *string,int radix)
         *cp='\0';
         return string;
     }
+    /*
     if((value<=0x0f)&&(value>0))
     {
         aa[i++]=zm[value%radix];
         aa[i++]=zm[0];
     }
-    if (value>0x0f)
+    */
+    if (value>0)
     {
         long temp =value;
         while(temp>0)

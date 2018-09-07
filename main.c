@@ -26,7 +26,7 @@
 void Init_Sys(void)
 {
 	Init_MCU();
-    BSP_init();
+	LED_INIT();
 	Init_UART1();
 #if dbglog
 	Init_UART2();
@@ -68,6 +68,7 @@ void main(void)
 {
     wdt_disable();
 	Init_Sys();
+    BSP_init();
     uart_bufInit(&uart1rx);
     wdt_enable();
 	while(1)

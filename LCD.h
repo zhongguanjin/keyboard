@@ -72,6 +72,12 @@ enum
 #define     LED_INC_ON                          ( LATF3 = 1 )
 #define     LED_DEC_OFF                         ( LATF4 = 0 )
 #define     LED_DEC_ON                          ( LATF4 = 1 )
+#define     LED_WATER_OFF                       ( LATC5 = 0 )
+#define     LED_WATER_ON                        ( LATC5 = 1 )
+#define     LED_AIR_OFF                         ( LATC4 = 0 )
+#define     LED_AIR_ON                          ( LATC4 = 1 )
+#define     LED_LAMP_OFF                        ( LATC3 = 0 )
+#define     LED_LAMP_ON                         ( LATC3 = 1 )
 #else
 #define     LED_TAP_OFF                         ( LATF3 = 0 )
 #define     LED_TAP_ON                          ( LATF3 = 1 )
@@ -83,18 +89,24 @@ enum
 #define     LED_INC_ON                          ( LATF6 = 1 )
 #define     LED_DEC_OFF                         ( LATF7 = 0 )
 #define     LED_DEC_ON                          ( LATF7 = 1 )
+#define     LED_WATER_OFF                       ( LATC5 = 0 )
+#define     LED_WATER_ON                        ( LATC5 = 1 )
+#if Key_8
+#define     LED_AIR_OFF                         ( LATC4 = 0 )
+#define     LED_AIR_ON                          ( LATC4 = 1 )
+#define     LED_LAMP_OFF                        ( LATC3 = 0 )
+#define     LED_LAMP_ON                         ( LATC3 = 1 )
+#elif Key_7
+#define     LED_AIR_OFF                         ( LATC3 = 0 )
+#define     LED_AIR_ON                          ( LATC3 = 1 )
+#define     LED_LAMP_OFF                        ( LATC4 = 0 )
+#define     LED_LAMP_ON                         ( LATC4 = 1 )
+#endif
 #endif
 
 
 
-#define     LED_WATER_OFF                       ( LATC5 = 0 )
-#define     LED_WATER_ON                        ( LATC5 = 1 )
 
-#define     LED_AIR_OFF                         ( LATC4 = 0 )
-#define     LED_AIR_ON                          ( LATC4 = 1 )
-
-#define     LED_LAMP_OFF                        ( LATC3 = 0 )
-#define     LED_LAMP_ON                         ( LATC3 = 1 )
 
 
 
@@ -117,4 +129,6 @@ extern void     show_clean(); //«ÂΩ‡œ‘ æ
 extern void     show_wifi_pair(uint8 bai,uint8 shi,uint8 ge);
 extern void     show_awaken();
 extern void     show_update(void);
+extern void show_soft_version(uint16 dat);
+
 #endif /* CAPT_APP_H_ */

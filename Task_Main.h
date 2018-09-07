@@ -4,6 +4,10 @@
 #include "config.h"
 
 #define key_5  0
+#define Key_8  1
+#define Key_7  0
+
+#define   soft_version      10  //软件版本号  v1.0
 
 // 任务结构体：
 typedef struct _TASK_COMPONENTS
@@ -26,13 +30,15 @@ typedef struct _TASK_COMPONENTS
 /*按键功能定义*/
 
 #if key_5
-
 #define   ALL_CLOSE          0X00
 #define   TAP_VALVE          0X04
 #define   SHOWER_VALVE       0X08
 #define   DRAIN_VALVE        0X10
 #define   INC_VALVE          0X01
 #define   DEC_VALVE          0X02
+#define   LAMP_VALVE         0X80
+#define   AIR_VALVE          0X40
+#define   WATER_VALVE        0X20
 #else
 #define   ALL_CLOSE          0X00
 #define   TAP_VALVE          0X01
@@ -40,10 +46,19 @@ typedef struct _TASK_COMPONENTS
 #define   DRAIN_VALVE        0X04
 #define   INC_VALVE          0X08
 #define   DEC_VALVE          0X10
-#endif
-#define   WATER_VALVE        0X20
-#define   AIR_VALVE          0X40
+#if Key_8
 #define   LAMP_VALVE         0X80
+#define   AIR_VALVE          0X40
+#define   WATER_VALVE        0X20
+#elif Key_7
+#define   LAMP_VALVE         0X40
+#define   AIR_VALVE          0X80
+#define   WATER_VALVE        0X20
+#endif
+#endif
+
+
+
 #define   LOCK_VALVE        (TAP_VALVE|SHOWER_VALVE|DEC_VALVE)
 #define   CLEAN_VALVE       (INC_VALVE|WATER_VALVE)
 /*WIFI PAIR*/

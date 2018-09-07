@@ -45,8 +45,7 @@ static uint16 Cstate_time =0;
 
 
 //zgj 2018-07-12  ota update
-#define   soft_version      0x01  //软件版本号
-UN32      soft_chksum;         // 软件校验码，4字节
+UN32      soft_chksum;      // 软件校验码，4字节
 uint8 chksum=0;
 uint16 block=0;
 uint8 verify=0;  //
@@ -63,6 +62,8 @@ uint8 f6_err_cnt=0;   //zgj 2018-7-26 通信故障
 void TaskShow(void);
 void TaskKeyScan(void);
 void TaskKeyPrs(void);
+
+void TaskIdel(void);
 
 void set_temp_val_dec(uint8 val);
 void set_temp_val_inc(uint8 val);
@@ -107,6 +108,7 @@ static TASK_COMPONENTS TaskComps[] =
     {0, 20,  20,  TaskKeyScan},               //按键扫描
     {0, 10,  10,  TaskKeyPrs},             //按键进程函数
     {0, 100, 100, TaskShow},               // 显示任务
+    {0, 1000,1000,TaskIdel}
 
 };
 
@@ -116,6 +118,7 @@ typedef enum _TASK_LIST
     TAST_SHOW,             // 显示温度
     TAST_KEY_SCAN,
 	TAST_KEY_PRS,
+	TASK_IDLE,
     TASKS_MAX                // 总的可供分配的定时任务数目
 } TASK_LIST;
 
@@ -180,17 +183,6 @@ void clear_fun_show(void)
 *****************************************************************************/
 void TaskShow(void) //100ms
 {
-    if(work_state != WORK_MCU_UPDATE)
-    {
-        if((f6_err_cnt++)>=100)//10s
-        {
-            f6_err_cnt = 70;
-            Flg.err_f6_flg=1;
-            write_err_num(ERR_F6);
-            work_state = WORK_STATE_IDLE; //2018-8-30 zgj
-        }
-    	check_uart();
-    }
     switch(work_state)
     {
         case WORK_STATE_IDLE:
@@ -226,6 +218,28 @@ void TaskShow(void) //100ms
     }
 }
 
+
+void TaskIdel(void) // 1s
+{
+    //dbg("1s\r\n");
+    if(work_state !=WORK_WIFI_PAIR)
+    {
+        judge_err_num();
+    }
+    IDLE_EventHandler();
+    if(work_state != WORK_MCU_UPDATE)
+    {
+        if((f6_err_cnt++)>=10)//10s
+        {
+            f6_err_cnt = 70;
+            Flg.err_f6_flg=1;
+            write_err_num(ERR_F6);
+            work_state = WORK_STATE_IDLE; //2018-8-30 zgj
+        }
+    	check_uart();
+    }
+
+}
 /*****************************************************************************
  函 数 名  : TaskClean
  功能描述  : 清洁管道任务函数
@@ -401,7 +415,9 @@ void TaskKeyPrs(void)  //10MS
     static uint16 count =0;
 #if key_5
     id =  Button_id&0X1f;
-#else
+#elif Key_7
+    id =  Button_id&0X7f; //7f
+#elif Key_8
     id =  Button_id&0Xff; //ff
 #endif
     if(work_state !=WORK_MCU_UPDATE)
@@ -482,11 +498,6 @@ void TaskKeyPrs(void)  //10MS
                 break;
             }
         }
-        if(work_state !=WORK_WIFI_PAIR)
-        {
-            judge_err_num();
-        }
-        IDLE_EventHandler();
     }
 }
 
@@ -1283,14 +1294,14 @@ void WIFI_EventHandler(void) //10ms
     修改内容   : 新生成函数
 
 *****************************************************************************/
-void judge_err_num(void)//10ms
+void judge_err_num(void)// 1s
 {
     if((KeyCmd.req.dat[DAT_ERR_NUM]&0x7F) != 0x00)  //有错误
     {
         if((key_adjust_fag==0)&&(ShowPar.on_off_flg==0)&&(incdec_fag == 0))
         {
             Flg.err_flg =1;
-            if((Time_t.err_cnt++)>=400)
+            if((Time_t.err_cnt++)>=4)// 4s
             {
                 Time_t.err_cnt=0;
                 write_err_num(KeyCmd.req.dat[DAT_ERR_NUM]&0x7F);
@@ -1329,7 +1340,7 @@ void judge_err_num(void)//10ms
     修改内容   : 新生成函数
 
 *****************************************************************************/
-void wifi_pair_pro(void)
+void wifi_pair_pro(void)// 100ms
 {
     if((Time_t.wifi_pair++)==10) // 1s后发送关闭按钮
     {
@@ -1407,7 +1418,7 @@ void child_lock_show(void)
     修改内容   : 新生成函数
 
 *****************************************************************************/
-void IDLE_EventHandler(void) //10ms
+void IDLE_EventHandler(void) // 1s
 {
     static uint8 flg=0;
     if((Time_t.temp38 == 30)&&(work_state == WORK_STATE_IDLE))  //温度保持30min钟 后切换成38度
@@ -1421,10 +1432,12 @@ void IDLE_EventHandler(void) //10ms
             KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
             KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
             KeyCmd.req.dat[25]=0x01;  //告诉温控板复位
-            Time_t.temp38 = 0;
+            //show_tempture(ShowPar.temp_val);//zgj  温度变化
+            dbg("sleep 30min\r\n");
         }
+        Time_t.temp38 = 0;
     }
-    if(Time_t.sleep++ >=6000) // 1min钟时间到  时基10ms
+    if(Time_t.sleep++ >=60) // 1min钟时间到
     {
        Time_t.sleep = 0;
        if(Flg.lcd_sleep_flg == 1) //面板休眠
@@ -1433,6 +1446,7 @@ void IDLE_EventHandler(void) //10ms
        }
        else
        {
+            dbg("\r\n");
             Time_t.temp38 = 0;
             flg=0;
        }
@@ -1443,6 +1457,7 @@ void IDLE_EventHandler(void) //10ms
                 show_sleep(ON);
             }
        }
+       dbg("time38:%d\r\n",Time_t.temp38);
     }
 }
 
@@ -1730,6 +1745,7 @@ void key_massage_sync(void)
             }
         }
     }
+#if Key_8
     if(((KeyCmd.rsp.dat[DAT_MASSAGE]&0xE2)!=(KeyCmd.req.dat[DAT_MASSAGE]&0xE2)
         ||((KeyCmd.rsp.dat[DAT_MASSAGE]&0xE2)!=(massage_dat&0xE2)))) //气按摩状态更新
     {
@@ -1759,6 +1775,7 @@ void key_massage_sync(void)
             }
         }
     }
+#endif
 }
 
 /*****************************************************************************
@@ -1923,6 +1940,7 @@ void key_state_sync(void)
         }
         else
         {
+            dbg("lock over\r\n");
             sync_temp_show();
             work_state =WORK_STATE_IDLE;
         }
@@ -1938,6 +1956,7 @@ void key_state_sync(void)
        }
        else
        {
+           dbg("clean over\r\n");
            sync_temp_show();
            work_state =WORK_STATE_IDLE;
        }
@@ -1954,8 +1973,9 @@ void key_state_sync(void)
         else
         {
            Time_t.wifi_pair =0;
-           work_state = WORK_STATE_IDLE;
+           dbg("WIFI_PAIR over\r\n");
            sync_temp_show();
+           work_state = WORK_STATE_IDLE;
         }
     }
 }
@@ -2267,8 +2287,8 @@ void Serial_Processing (void)
 *****************************************************************************/
 void set_temp_val_dec(uint8 val)
 {
-    Time_t.sleep = 0;
-    Time_t.temp38 = 0;
+    //Time_t.sleep = 0;
+    //Time_t.temp38 = 0;
     ShowPar.temp_val -= val ;
     if(ShowPar.temp_val < TEMPERATURE_MIN)
     {
@@ -2304,8 +2324,8 @@ void set_temp_val_dec(uint8 val)
 *****************************************************************************/
 void set_temp_val_inc(uint8 val)
 {
-    Time_t.sleep = 0;
-    Time_t.temp38 = 0;
+    //Time_t.sleep = 0;
+    //Time_t.temp38 = 0;
     ShowPar.temp_val += val ;
     if(ShowPar.temp_val > TEMPERATURE_MAX)
     {
@@ -2342,7 +2362,6 @@ void set_temp_val_inc(uint8 val)
 *****************************************************************************/
 void BSP_init(void)
 {
-    LED_INIT();
     KEY_SBIO_IN;  //RB口设置成输入模式
     /* BEGIN: Added by zgj, 2018/1/5 */
     //初始化灯颜色，按摩档位
@@ -2357,10 +2376,11 @@ void BSP_init(void)
     KeyCmd.req.dat[DAT_TEMP_H] = ShowPar.temp_val >> 8;            // 温度高
     KeyCmd.req.dat[DAT_TEMP_L]  =  ShowPar.temp_val;
     KeyCmd.req.dat[DAT_FLOW] = 0x64;
-    //KeyCmd.req.dat[DAT_TEM_PRE]  = 0x26;
     KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
     KeyCmd.req.end_num1 = 0x0F;
     KeyCmd.req.end_num2 = 0x04;
+    show_soft_version(soft_version);
+    delay_ms(2000);
     show_tempture( ShowPar.temp_val);
     dbg("temp init\r\n");
     work_state = WORK_STATE_IDLE;

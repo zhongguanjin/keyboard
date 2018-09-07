@@ -4,7 +4,7 @@
 
 uint8 digi_flg = 0;
 
-uint8 tab_num[10]={
+uint8 tab_num[11]={
 0x40,   //0
 0x79,  // 1
 0x24,  // 2
@@ -15,6 +15,7 @@ uint8 tab_num[10]={
 0x78,   //7
 0x00,   //8
 0x10, //9
+0x7f,
 };
 
 uint8 tab_val[19]={
@@ -114,6 +115,18 @@ void show_tempture( uint16 data)//Œ¬∂»œ‘ æ
     {
        digiBuf[2] = 5;
     }
+}
+void show_soft_version(uint16 dat)
+{
+    digi_flg = 0;
+    Flg.lcd_sleep_flg = 0;
+    digiBuf[0] = dat/100;
+    if(digiBuf[0] == 0)
+    {
+        digiBuf[0] =10;
+    }
+    digiBuf[1] = (dat%100)/10;
+    digiBuf[2] = dat%10;
 }
 
 void show_awaken()
@@ -304,12 +317,11 @@ void LED_INIT(void)
     LED_WATER_ON;
     LED_AIR_ON;
     LED_LAMP_ON;
-    delay_ms(3000);
+    delay_ms(2000);
     LED_COM1_H;
     LED_COM2_H;
     LED_COM3_H;
     LED_SEIO_OUT_H;
-
     LED_TAP_OFF;
     LED_SHOWER_OFF;
     LED_DRAIN_OFF;
