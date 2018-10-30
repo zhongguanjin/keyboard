@@ -276,6 +276,15 @@ void write_err_num(uint8 dat) //π ’œ¬Îœ‘ æ
                   digiBuf[2] = 13;//
                   break;
               }
+          case ERR_CC:
+              {
+                  digiBuf[0] = 16;//c
+                  digiBuf[1] = 16; // c
+                  digiBuf[2] = 16;//c
+                  break;
+              }
+          default:
+            break;
       }
 
 }

@@ -4,10 +4,10 @@
 #include "config.h"
 
 #define key_5  0
-#define Key_8  1
-#define Key_7  0
+#define Key_8  0
+#define Key_7  1
 
-#define   soft_version      10  //软件版本号  v1.0
+#define   soft_version      11  //软件版本号  v1.0
 
 // 任务结构体：
 typedef struct _TASK_COMPONENTS
@@ -63,6 +63,8 @@ typedef struct _TASK_COMPONENTS
 #define   CLEAN_VALVE       (INC_VALVE|WATER_VALVE)
 /*WIFI PAIR*/
 #define   WIFI_VALVE        (TAP_VALVE|DRAIN_VALVE)
+// WIFI NET CONFIG
+#define   NETWORK_VAL       (SHOWER_VALVE|DRAIN_VALVE)
 
 
 
@@ -93,7 +95,7 @@ typedef struct
     uint8 temp_disreach_flg:1;        //水温保护 0-慢闪，1-快闪
     uint8 err_f1_flg:1;         //f1错误标志
     uint8 err_f6_flg:1;
-
+    uint8 net_config_flg:1;
 }tFlag_t;
 
 tFlag_t   Flg;

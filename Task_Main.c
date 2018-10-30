@@ -78,6 +78,7 @@ void AIR_EventHandler(void);
 void LAMP_EventHandler(void);
 void LOCK_EventHandler(void);
 void IDLE_EventHandler(void);
+void NETWORK_EventHandler(void);
 
 void key_adjust(uint8 id,uint8 dat);
 void time_cnt_del( uint8 id);
@@ -217,11 +218,44 @@ void TaskShow(void) //100ms
         }
     }
 }
-
-
+/*
+void test_drain(void)
+{
+    static uint8 test_cnt=0;
+    static uint8 test_st=STATE_1;
+    switch ( test_st )
+    {
+        case STATE_1:
+            {
+                if((test_cnt++)==5)  // 开
+                {
+                    test_cnt = 0;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
+                    test_st = STATE_2;
+                }
+            }
+            break;
+        case STATE_2 :
+            {
+                if((test_cnt++)==15)// 15s后关
+                {
+                    test_cnt = 0;
+                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE;
+                    KeyCmd.req.dat[DAT_VALVE] = 0x00;
+                    test_st = STATE_1;
+                }
+            }
+            break;
+         default :
+            break;
+    }
+}
+*/
 void TaskIdel(void) // 1s
 {
     //dbg("1s\r\n");
+    //test_drain();
     if(work_state !=WORK_WIFI_PAIR)
     {
         judge_err_num();
@@ -490,6 +524,16 @@ void TaskKeyPrs(void)  //10MS
                 }
                break;
             }
+            case NETWORK_VAL:
+            {
+                if((count++)>=300)
+                {
+                    count = 0;
+                    NETWORK_EventHandler();
+                }
+               break;
+            }
+
             default:
             {
                 count = 0;
@@ -649,6 +693,7 @@ void show_temp_flash(void)//100ms
     if(Flg.temp_flash_flg == 1)
     {
         static uint8 cnt =0;
+        clear();
         if((cnt%10)==5)
         {
            show_sleep(OFF);
@@ -1279,6 +1324,16 @@ void WIFI_EventHandler(void) //10ms
     }
 }
 
+void NETWORK_EventHandler(void)
+{
+    if(work_state == WORK_STATE_IDLE)
+    {
+        write_err_num(ERR_CC);
+        Flg.net_config_flg =1;
+        KeyCmd.req.dat[DAT_FUN_CMD]= 0xff;            // 功能码：wifi net config
+        KeyCmd.req.dat[DAT_VALVE] = 0x01;
+    }
+}
 /*****************************************************************************
  函 数 名  : judge_err_num
  功能描述  : 故障处理部分
@@ -1517,6 +1572,7 @@ void show_work(void)
 {
     if( 1 == ShowPar.on_off_flg)
     {
+         clear();
          Time_t.switch_cnt ++ ;
          if( Time_t.switch_cnt >= 20 ) // 2s时间到
          {
@@ -1553,6 +1609,28 @@ void show_work(void)
             LED_INC_OFF;
         }
     }
+    if(1 == Flg.net_config_flg )
+    {
+        static uint16 net_time =0;
+        uint8 dat =KeyCmd.rsp.dat[DAT_WIFI_PAIR];
+        if(dat!=0xff)
+        {
+            KeyCmd.req.dat[DAT_FUN_CMD]= 0xff;            // 功能码：wifi net config
+            KeyCmd.req.dat[DAT_VALVE] = 0x01;
+        }
+        else
+        {
+             KeyCmd.req.dat[DAT_FUN_CMD]= 0x00;
+             show_wifi_pair(dat/100, (dat%100)/10, dat%10);
+             Flg.net_config_flg=0;
+        }
+        if((net_time++) >=300)//30s
+        {
+           net_time=0;
+           Flg.net_config_flg=0;
+           show_tempture(ShowPar.temp_val);
+        }
+    }
 }
 /*****************************************************************************
  函 数 名  : show_temp_actul
@@ -1572,7 +1650,7 @@ void show_work(void)
 void show_temp_actul(void) // 100ms
 {
     uint16 pre_tem=0;
-    static uint8 cnt1 =0,cnt=0,show_flg=0;
+    static uint8 cnt1 =0,cnt=0,show_flg=0,test_flg=0;
     if((ShowPar.tap_state == ON)||(ShowPar.shower_state == ON )) //出水状态
     {
         pre_tem = KeyCmd.req.dat[DAT_TEM_OUT]*10;
@@ -1588,6 +1666,7 @@ void show_temp_actul(void) // 100ms
                 if((cnt%24)==0)
                 {
                     show_tempture(pre_tem);
+                    test_flg=1;
                 }
                 if((cnt%24)==10)
                 {
@@ -1595,6 +1674,7 @@ void show_temp_actul(void) // 100ms
                 }
                 if((cnt%24)==12)
                 {
+                    test_flg=0;
                     show_tempture( ShowPar.temp_val);
                 }
                 if((cnt%24)==22)
@@ -1612,6 +1692,7 @@ void show_temp_actul(void) // 100ms
                 Flg.temp_disreach_flg =1;
                 if((cnt1%45)==0)
                 {
+                     test_flg=1;
                     show_tempture(pre_tem);
                 }
                 if((cnt1%45)==20)
@@ -1620,6 +1701,7 @@ void show_temp_actul(void) // 100ms
                 }
                 if((cnt1%45)==22)
                 {
+                    test_flg=0;
                     show_tempture( ShowPar.temp_val);
                 }
                 if((cnt1%45)==42)
@@ -1642,6 +1724,15 @@ void show_temp_actul(void) // 100ms
             Time_t.temp_switch = 0;
             show_tempture( ShowPar.temp_val);
         }
+    }
+    else if( test_flg==1)
+    {
+            cnt=0;
+            cnt1=0;
+            test_flg=0;
+            Flg.temp_disreach_flg =0;
+            Time_t.temp_switch = 0;
+            show_tempture( ShowPar.temp_val);
     }
 }
 
@@ -1966,17 +2057,20 @@ void key_state_sync(void)
         Time_t.sleep=0;
         KeyCmd.req.dat[DAT_WIFI_PAIR] = KeyCmd.rsp.dat[DAT_WIFI_PAIR];
         uint8 dat =KeyCmd.req.dat[DAT_WIFI_PAIR];
-        if(KeyCmd.req.dat[DAT_WIFI_PAIR]!=0)
+        if(0 == Flg.net_config_flg)
         {
-            show_wifi_pair(dat/100, (dat%100)/10, dat%10);
-        }
-        else
-        {
-           Time_t.wifi_pair =0;
-           dbg("WIFI_PAIR over\r\n");
-           sync_temp_show();
-           work_state = WORK_STATE_IDLE;
-        }
+            if(KeyCmd.req.dat[DAT_WIFI_PAIR]!=0)
+            {
+                show_wifi_pair(dat/100, (dat%100)/10, dat%10);
+            }
+            else
+            {
+               Time_t.wifi_pair =0;
+               dbg("WIFI_PAIR over\r\n");
+               sync_temp_show();
+               work_state = WORK_STATE_IDLE;
+            }
+            }
     }
 }
 /*****************************************************************************
@@ -2004,7 +2098,7 @@ void key_temp_sync( void )
             uint16 tem = 0;
             tem = (KeyCmd.rsp.dat[DAT_TEMP_H]<<8)+ KeyCmd.rsp.dat[DAT_TEMP_L];
             if((tem >= TEMPERATURE_MIN)&&(tem <= TEMPERATURE_MAX))
-            {
+             {
                 KeyCmd.req.dat[DAT_TEMP_H]=KeyCmd.rsp.dat[DAT_TEMP_H];
                 KeyCmd.req.dat[DAT_TEMP_L] =KeyCmd.rsp.dat[DAT_TEMP_L];
                 ShowPar.temp_val= (KeyCmd.req.dat[DAT_TEMP_H]<<8)+ KeyCmd.req.dat[DAT_TEMP_L];
