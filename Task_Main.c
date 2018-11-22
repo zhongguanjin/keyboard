@@ -1,4 +1,3 @@
-
 #include "Task_Main.h"
 #include "uart.h"
 #include "stdio.h"
@@ -254,15 +253,9 @@ void test_drain(void)
 */
 void TaskIdel(void) // 1s
 {
-    //dbg("1s\r\n");
-    //test_drain();
-    if(work_state !=WORK_WIFI_PAIR)
+    if((work_state !=WORK_WIFI_PAIR)&&(work_state != WORK_MCU_UPDATE))
     {
         judge_err_num();
-    }
-    IDLE_EventHandler();
-    if(work_state != WORK_MCU_UPDATE)
-    {
         if((f6_err_cnt++)>=10)//10s
         {
             f6_err_cnt = 70;
@@ -272,7 +265,7 @@ void TaskIdel(void) // 1s
         }
     	check_uart();
     }
-
+    IDLE_EventHandler();
 }
 /*****************************************************************************
  函 数 名  : TaskClean
@@ -912,6 +905,7 @@ void INC_EventHandler(void)
         }
         switch (key_arry[top])
         {
+        /*
             case ALL_CLOSE :
                 {
                     time_cnt++;
@@ -935,6 +929,7 @@ void INC_EventHandler(void)
                     }
                     break;
                 }
+                */
             case LAMP_VALVE:
                 {
                     if(KeyPressDown&INC_VALVE)  //第一次触发
@@ -954,8 +949,10 @@ void INC_EventHandler(void)
                     }
                     break;
                 }
+                /*
             case WATER_VALVE:
                 {
+                    //  zgj 2018-11-22 不用调档位
                     if(KeyPressDown&INC_VALVE)  //第一次触发
                     {
                         KeyPressDown = 0;
@@ -969,10 +966,12 @@ void INC_EventHandler(void)
                         KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
                                 +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5); //数据码
                     }
+
                     break;
                 }
             case AIR_VALVE:
                 {
+                    //  zgj 2018-11-22 不用调档位
                     if(KeyPressDown&INC_VALVE)  //第一次触发
                     {
                         KeyPressDown = 0;
@@ -985,6 +984,31 @@ void INC_EventHandler(void)
                         KeyCmd.req.dat[DAT_FUN_CMD] =FUN_MASSAGE;  // 功能码:07
                         KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
                                 +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5); //数据码
+                    }
+
+                    break;
+                }
+                */
+                default:
+                {
+                    time_cnt++;
+                    if(KeyPressDown&INC_VALVE)  //第一次触发
+                    {
+                        KeyPressDown = 0;
+                        time_cnt = 0;
+                        set_temp_val_inc(5);
+                    }
+                    else if((LastKey&INC_VALVE)&&(time_cnt>=40)) //连续按下400MS
+                    {
+                         time_cnt = 0;
+                         if(ShowPar.temp_val>=380)
+                         {
+                            set_temp_val_inc(5);
+                         }
+                         else
+                         {
+                            set_temp_val_inc(10);
+                         }
                     }
                     break;
                 }
@@ -1058,6 +1082,7 @@ void DEC_EventHandler(void)
                 }
             case WATER_VALVE:
                 {
+                    /*  zgj 2018-11-22 不用调档位
                     if(KeyPressDown&DEC_VALVE)  //第一次触发
                     {
                         KeyPressDown = 0;
@@ -1074,10 +1099,12 @@ void DEC_EventHandler(void)
                         KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
                                 +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                     }
+                    */
                     break;
                 }
             case AIR_VALVE:
                 {
+                    /*  zgj 2018-11-22 不用调档位
                     if(KeyPressDown&DEC_VALVE)  //第一次触发
                     {
                         KeyPressDown = 0;
@@ -1094,8 +1121,11 @@ void DEC_EventHandler(void)
                         KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
                                 +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                     }
+                    */
                     break;
                 }
+                default:
+                    break;
         }
     }
 }
@@ -2265,9 +2295,12 @@ void Serial_Processing (void)
         {
             index.ush=0,       //
             work_state = WORK_MCU_UPDATE;
-            if(KeyCmd.req.dat[DAT_VALVE]== 0xFC) //强制升级
+            if(KeyCmd.rsp.dat[DAT_VALVE]== 0xFC) //强制升级
             {
                 nv_write(0, 0,0xAA);
+                NOP();
+                NOP();
+                NOP();
                 #asm
                     ljmp BOOT_START
                 #endasm

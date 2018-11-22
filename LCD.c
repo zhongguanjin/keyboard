@@ -284,6 +284,32 @@ void write_err_num(uint8 dat) //π ’œ¬Îœ‘ æ
                   break;
               }
           default:
+              {
+                if((dat&ERR_F1) == ERR_F1)
+                {
+                  digiBuf[0] = 12;//F
+                  digiBuf[1] = 1; // 1
+                  digiBuf[2] = 13;//
+                }
+                if((dat&ERR_F2) == ERR_F2)
+                {
+                  digiBuf[0] = 12;//F
+                  digiBuf[1] = 2; // 2
+                  digiBuf[2] = 13;//
+                }
+                if((dat&ERR_F7) == ERR_F7)
+                {
+                  digiBuf[0] = 12;//F
+                  digiBuf[1] = 7; //7
+                  digiBuf[2] = 13;//
+                }
+                if((dat&ERR_F8) == ERR_F8)
+                {
+                  digiBuf[0] = 12;//F
+                  digiBuf[1] = 8; // 1
+                  digiBuf[2] = 13;//
+                }
+              }
             break;
       }
 

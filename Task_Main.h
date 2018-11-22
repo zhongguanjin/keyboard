@@ -7,7 +7,7 @@
 #define Key_8  0
 #define Key_7  1
 
-#define   soft_version      11  //软件版本号  v1.0
+#define   soft_version      12  //软件版本号  v1.2
 
 // 任务结构体：
 typedef struct _TASK_COMPONENTS
@@ -79,7 +79,7 @@ typedef struct _TASK_COMPONENTS
 #define     BUF_SIZE   32
 #define     send_cnt   1
 #define     crc_len    (BUF_SIZE-5)
-uint8       Recv_Buf[BUF_SIZE+8];
+uint8       Recv_Buf[BUF_SIZE];
 
 uint8 Button_id = 0;   //按键id号
 

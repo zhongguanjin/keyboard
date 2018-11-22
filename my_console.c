@@ -49,6 +49,8 @@ void console_process(void)
     static uint8 check_sum = 0;
     static uint8 index=0;
     static uint8 st=0;
+    if(uart1rx.out!=uart1rx.in)
+    {
     while(1)
     {
         if(0 == uart1_getch(&ch))
@@ -170,6 +172,7 @@ void console_process(void)
         {
            break;
         }
+    }
     }
 }
 
