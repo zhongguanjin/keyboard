@@ -258,7 +258,7 @@ void TaskIdel(void) // 1s
         judge_err_num();
         if((f6_err_cnt++)>=10)//10s
         {
-            f6_err_cnt = 70;
+            f6_err_cnt = 7;
             Flg.err_f6_flg=1;
             write_err_num(ERR_F6);
             work_state = WORK_STATE_IDLE; //2018-8-30 zgj
@@ -1045,6 +1045,7 @@ void DEC_EventHandler(void)
         }
         switch (key_arry[top])
         {
+            /*
             case ALL_CLOSE :
                 {
                     time_cnt++;
@@ -1061,6 +1062,7 @@ void DEC_EventHandler(void)
                     }
                     break;
                 }
+                */
             case LAMP_VALVE:
                 {
                     if(KeyPressDown&DEC_VALVE)  //第一次触发
@@ -1080,9 +1082,10 @@ void DEC_EventHandler(void)
                     }
                     break;
                 }
+                /*
             case WATER_VALVE:
                 {
-                    /*  zgj 2018-11-22 不用调档位
+                    //  zgj 2018-11-22 不用调档位
                     if(KeyPressDown&DEC_VALVE)  //第一次触发
                     {
                         KeyPressDown = 0;
@@ -1099,12 +1102,11 @@ void DEC_EventHandler(void)
                         KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
                                 +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                     }
-                    */
                     break;
                 }
             case AIR_VALVE:
                 {
-                    /*  zgj 2018-11-22 不用调档位
+                    // zgj 2018-11-22 不用调档位
                     if(KeyPressDown&DEC_VALVE)  //第一次触发
                     {
                         KeyPressDown = 0;
@@ -1121,11 +1123,26 @@ void DEC_EventHandler(void)
                         KeyCmd.req.dat[DAT_VALVE] = (ShowPar.water_gear<<2)
                                 +(ShowPar.air_gear<<5)+((ShowPar.val&0x60)>>5);
                     }
-                    */
+
                     break;
                 }
+                */
                 default:
+                {
+                    time_cnt++;
+                    if(KeyPressDown&DEC_VALVE)  //第一次触发
+                    {
+                        KeyPressDown = 0;
+                        time_cnt = 0;
+                        set_temp_val_dec(5);
+                    }
+                    else if((LastKey&DEC_VALVE)&&(time_cnt>=40)) //连续按下
+                    {
+                         time_cnt = 0;
+                         set_temp_val_dec(10);
+                    }
                     break;
+                }
         }
     }
 }

@@ -248,6 +248,7 @@ void write_err_num(uint8 dat) //π ’œ¬Îœ‘ æ
                   digiBuf[2] = 13;//
                   break;
               }
+          /*
           case ERR_F6:
               {
                   digiBuf[0] = 12;//F
@@ -255,6 +256,7 @@ void write_err_num(uint8 dat) //π ’œ¬Îœ‘ æ
                   digiBuf[2] = 13;//
                   break;
               }
+              */
           case ERR_F7:
               {
                   digiBuf[0] = 12;//F
@@ -306,7 +308,7 @@ void write_err_num(uint8 dat) //π ’œ¬Îœ‘ æ
                 if((dat&ERR_F8) == ERR_F8)
                 {
                   digiBuf[0] = 12;//F
-                  digiBuf[1] = 8; // 1
+                  digiBuf[1] = 8; // 8
                   digiBuf[2] = 13;//
                 }
               }
