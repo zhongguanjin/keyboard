@@ -5,9 +5,11 @@
 
 #define key_5  0
 #define Key_8  0
-#define Key_7  1
+#define Key_7  0
+#define key_6  1
 
-#define   soft_version      12  //软件版本号  v1.2
+
+#define   soft_version      13 //软件版本号  v1.3
 
 // 任务结构体：
 typedef struct _TASK_COMPONENTS
@@ -29,7 +31,7 @@ typedef struct _TASK_COMPONENTS
 
 /*按键功能定义*/
 
-#if key_5
+#if (key_5||key_6)
 #define   ALL_CLOSE          0X00
 #define   TAP_VALVE          0X04
 #define   SHOWER_VALVE       0X08
@@ -96,6 +98,9 @@ typedef struct
     uint8 err_f1_flg:1;         //f1错误标志
     uint8 err_f6_flg:1;
     uint8 net_config_flg:1;
+    uint8 othet_st_flg:1;
+    uint8 exhibition_flg:1;
+    uint8 panel_drain_key:1;  //面板排水按键
 }tFlag_t;
 
 tFlag_t   Flg;
@@ -152,6 +157,7 @@ enum
 };
 
 #define DAT_ERR_NUM     26
+#define DAT_OTHER_ST    25
 #define DAT_WIFI_PAIR   19
 #define DAT_MAS_TIME    18
 /*

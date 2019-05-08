@@ -100,6 +100,7 @@ void key_lamp_sync(void);
 void key_inflow_sync(void);
 void key_temp_sync( void );
 void key_state_sync(void);
+void test_drain(void);
 
 
 // 定义结构体变量
@@ -109,7 +110,6 @@ static TASK_COMPONENTS TaskComps[] =
     {0, 10,  10,  TaskKeyPrs},             //按键进程函数
     {0, 100, 100, TaskShow},               // 显示任务
     {0, 1000,1000,TaskIdel}
-
 };
 
 // 任务清单
@@ -217,40 +217,33 @@ void TaskShow(void) //100ms
         }
     }
 }
-/*
+
+
 void test_drain(void)
 {
     static uint8 test_cnt=0;
-    static uint8 test_st=STATE_1;
-    switch ( test_st )
+    if(Flg.panel_drain_key == 1)
     {
-        case STATE_1:
+        if((KeyCmd.req.dat[DAT_LIQUID]&0x01)==0x01) //高于低液位
+        {
+            if((test_cnt++)==15)// 15s后关
             {
-                if((test_cnt++)==5)  // 开
-                {
-                    test_cnt = 0;
-                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE;
-                    KeyCmd.req.dat[DAT_VALVE] = 0x01;
-                    test_st = STATE_2;
-                }
+                test_cnt = 0;
+                Flg.panel_drain_key=0;
+                KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE;
+                KeyCmd.req.dat[DAT_VALVE] = 0x00;
             }
-            break;
-        case STATE_2 :
-            {
-                if((test_cnt++)==15)// 15s后关
-                {
-                    test_cnt = 0;
-                    KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE;
-                    KeyCmd.req.dat[DAT_VALVE] = 0x00;
-                    test_st = STATE_1;
-                }
-            }
-            break;
-         default :
-            break;
+        }
+        else
+        {
+            test_cnt = 0;
+            Flg.panel_drain_key=0;
+            KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE;
+            KeyCmd.req.dat[DAT_VALVE] = 0x00;
+        }
     }
 }
-*/
+
 void TaskIdel(void) // 1s
 {
     if((work_state !=WORK_WIFI_PAIR)&&(work_state != WORK_MCU_UPDATE))
@@ -266,6 +259,10 @@ void TaskIdel(void) // 1s
     	check_uart();
     }
     IDLE_EventHandler();
+    if(Flg.exhibition_flg == 1)//展会模式
+    {
+         test_drain();
+    }
 }
 /*****************************************************************************
  函 数 名  : TaskClean
@@ -446,6 +443,8 @@ void TaskKeyPrs(void)  //10MS
     id =  Button_id&0X7f; //7f
 #elif Key_8
     id =  Button_id&0Xff; //ff
+#elif key_6
+    id =  Button_id&0X3f; //ff
 #endif
     if(work_state !=WORK_MCU_UPDATE)
     {
@@ -575,7 +574,7 @@ void del(uint8 value)
     if(key_arry[top] == value) //是栈顶元素
     {
         key_arry[top] = 0; //清零
-        top = 0;
+        top -= 1;  //移完后需把栈顶标号减1
     }
     else
     {
@@ -863,10 +862,12 @@ void DRAIN_EventHandler(void)
             if( ShowPar.drain_state == STATE_ON)
             {
                 LED_DRAIN_ON;
+                Flg.panel_drain_key = 1;
             }
             else
             {
                LED_DRAIN_OFF;
+               Flg.panel_drain_key = 0;
             }
             KeyCmd.req.dat[DAT_FUN_CMD] =FUN_DRAINAGE;
             KeyCmd.req.dat[DAT_VALVE] = ShowPar.drain_state; //数据码 排水
@@ -905,7 +906,7 @@ void INC_EventHandler(void)
         }
         switch (key_arry[top])
         {
-        /*
+            /*
             case ALL_CLOSE :
                 {
                     time_cnt++;
@@ -949,7 +950,7 @@ void INC_EventHandler(void)
                     }
                     break;
                 }
-                /*
+#if Key_8
             case WATER_VALVE:
                 {
                     //  zgj 2018-11-22 不用调档位
@@ -988,7 +989,7 @@ void INC_EventHandler(void)
 
                     break;
                 }
-                */
+#endif
                 default:
                 {
                     time_cnt++;
@@ -1082,7 +1083,7 @@ void DEC_EventHandler(void)
                     }
                     break;
                 }
-                /*
+#if Key_8
             case WATER_VALVE:
                 {
                     //  zgj 2018-11-22 不用调档位
@@ -1126,7 +1127,7 @@ void DEC_EventHandler(void)
 
                     break;
                 }
-                */
+#endif
                 default:
                 {
                     time_cnt++;
@@ -1268,7 +1269,6 @@ void WATER_EventHandler(void)
             clean_state = STATE_0;
 		}
 	}
-
 }
 /*****************************************************************************
  函 数 名  : LAMP_EventHandler
@@ -1375,7 +1375,7 @@ void NETWORK_EventHandler(void)
 {
     if(work_state == WORK_STATE_IDLE)
     {
-        write_err_num(ERR_CC);
+        write_err_num(ERR_SEQ);
         Flg.net_config_flg =1;
         KeyCmd.req.dat[DAT_FUN_CMD]= 0xff;            // 功能码：wifi net config
         KeyCmd.req.dat[DAT_VALVE] = 0x01;
@@ -1533,7 +1533,7 @@ void IDLE_EventHandler(void) // 1s
             KeyCmd.req.dat[DAT_VALVE]=0x00;
             KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
             KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
-            KeyCmd.req.dat[25]=0x01;  //告诉温控板复位
+            KeyCmd.req.dat[25]=(KeyCmd.req.dat[25]|0x01);  //告诉温控板复位
             //show_tempture(ShowPar.temp_val);//zgj  温度变化
             dbg("sleep 30min\r\n");
         }
@@ -1615,7 +1615,7 @@ void CLEAN_EventHandler(void)
     修改内容   : 新生成函数
 
 *****************************************************************************/
-void show_work(void)
+void show_work(void)//100ms
 {
     if( 1 == ShowPar.on_off_flg)
     {
@@ -1658,7 +1658,7 @@ void show_work(void)
     }
     if(1 == Flg.net_config_flg )
     {
-        static uint16 net_time =0;
+        static uint16 net_time =0,delay_stime=0;
         uint8 dat =KeyCmd.rsp.dat[DAT_WIFI_PAIR];
         if(dat!=0xff)
         {
@@ -1668,13 +1668,32 @@ void show_work(void)
         else
         {
              KeyCmd.req.dat[DAT_FUN_CMD]= 0x00;
-             show_wifi_pair(dat/100, (dat%100)/10, dat%10);
              Flg.net_config_flg=0;
+             /*
+             write_err_num(ERR_LUE);
+             if((delay_stime++) >= 30)
+             {
+                 delay_stime=0;
+                 Flg.net_config_flg=0;
+                 show_tempture(ShowPar.temp_val);
+             }
+             */
         }
         if((net_time++) >=300)//30s
         {
            net_time=0;
            Flg.net_config_flg=0;
+           show_tempture(ShowPar.temp_val);
+        }
+    }
+
+    if(Flg.othet_st_flg == 1) //
+    {
+        static uint16 st_time =0;
+        if((st_time++) >=100)//10s
+        {
+           st_time=0;
+           Flg.othet_st_flg=0;
            show_tempture(ShowPar.temp_val);
         }
     }
@@ -2071,7 +2090,7 @@ void key_state_sync(void)
     {
         Time_t.sleep=0;
         KeyCmd.req.dat[DAT_LOCK] =KeyCmd.rsp.dat[DAT_LOCK];
-        if(KeyCmd.req.dat[DAT_LOCK] == 1)                // lock
+        if((KeyCmd.req.dat[DAT_LOCK]&0x01) == 1)                // lock
         {
             show_lock();
             work_state =WORK_STATE_LOCK;
@@ -2082,6 +2101,14 @@ void key_state_sync(void)
             sync_temp_show();
             work_state =WORK_STATE_IDLE;
         }
+       if((KeyCmd.req.dat[DAT_LOCK]&0x02) == 0x02)
+       {
+            Flg.exhibition_flg =1;
+       }
+       else
+       {
+            Flg.exhibition_flg =0;
+       }
     }
     if(KeyCmd.rsp.dat[DAT_CLAEN]!=KeyCmd.req.dat[DAT_CLAEN]) //清洁状态更新
     {
@@ -2117,8 +2144,30 @@ void key_state_sync(void)
                sync_temp_show();
                work_state = WORK_STATE_IDLE;
             }
-            }
+        }
     }
+    if(work_state == WORK_STATE_IDLE)
+    {
+        if(KeyCmd.rsp.dat[DAT_OTHER_ST]!=KeyCmd.req.dat[DAT_OTHER_ST]) // 网络状态(路由和服务)更新
+        {
+            Time_t.sleep=0;
+            KeyCmd.req.dat[DAT_OTHER_ST] = KeyCmd.rsp.dat[DAT_OTHER_ST];
+            uint8 dat =KeyCmd.req.dat[DAT_OTHER_ST]&0x06;
+            if(dat == 0x02)//路由器连接ok 显示LUE
+            {
+                write_err_num(ERR_LUE);
+            }
+            else if(dat==0x06)//服务器连接ok  //SEE
+            {
+                Flg.othet_st_flg =1;
+                write_err_num(ERR_SEE);
+            }
+            else
+            {
+                sync_temp_show();
+            }
+         }
+     }
 }
 /*****************************************************************************
  函 数 名  : key_temp_sync
@@ -2386,6 +2435,7 @@ void Serial_Processing (void)
                 KeyCmd.req.dat[DAT_CLAEN] = KeyCmd.rsp.dat[DAT_CLAEN];           //清洁状态
                 KeyCmd.req.dat[DAT_TEM_PRE] = KeyCmd.rsp.dat[DAT_TEM_PRE];     //浴缸水温
                 KeyCmd.req.dat[DAT_MAS_TIME] = KeyCmd.rsp.dat[DAT_MAS_TIME];     //按摩时间
+                KeyCmd.req.dat[DAT_OTHER_ST] = KeyCmd.rsp.dat[DAT_OTHER_ST];     //其他状态
             }
             else
             {
@@ -2401,7 +2451,7 @@ void Serial_Processing (void)
     delay_ms(5);
     send_dat(&KeyCmd.req, BUF_SIZE);
     KeyCmd.req.dat[DAT_FUN_CMD]=0;          //清功能码
-    KeyCmd.req.dat[25]=0;
+    KeyCmd.req.dat[25]=KeyCmd.req.dat[25]&0x06;
     if(bak_ok_flg == 1)//成功备份
     {
         bak_ok_flg=0;

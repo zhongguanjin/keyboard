@@ -18,7 +18,9 @@ enum
 #define     ERR_F2    0X20
 #define     ERR_F7    0X10
 #define     ERR_OK    0X00
-#define     ERR_CC    0xCC
+#define     ERR_SEQ    0xCC
+#define     ERR_LUE   0x11
+#define     ERR_SEE   0x12
 
 
 
@@ -63,7 +65,7 @@ enum
 //°´¼üµÆ
 #define     LED_SFIO_OUT                        ( TRISF = 0 )
 
-#if  key_5
+#if (key_5||key_6)
 #define     LED_TAP_OFF                         ( LATF5 = 0 )
 #define     LED_TAP_ON                          ( LATF5 = 1 )
 #define     LED_SHOWER_OFF                      ( LATF6 = 0 )

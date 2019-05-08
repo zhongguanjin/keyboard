@@ -18,7 +18,7 @@ uint8 tab_num[11]={
 0x7f,
 };
 
-uint8 tab_val[19]={
+uint8 tab_val[20]={
 0xc0,   //0
 0xf9,  // 1
 0xa4,  // 2
@@ -33,11 +33,12 @@ uint8 tab_val[19]={
 0xab, //11 N
 0x8e, //12 F
 0xff, // clear
-0x8c, //14p-ÀÆ∞¥ƒ¶
-0x86, //15e-qi∞¥ƒ¶
-0xc6, //16c-µ∆
+0x8c, //14 p-ÀÆ∞¥ƒ¶
+0x86, //15 e-qi∞¥ƒ¶
+0xc6, //16 c-µ∆
 0x98, //17 q-
 0xC1, //18 u
+0xC7  // 19 L
 };
 
 
@@ -248,7 +249,6 @@ void write_err_num(uint8 dat) //π ’œ¬Îœ‘ æ
                   digiBuf[2] = 13;//
                   break;
               }
-          /*
           case ERR_F6:
               {
                   digiBuf[0] = 12;//F
@@ -256,7 +256,6 @@ void write_err_num(uint8 dat) //π ’œ¬Îœ‘ æ
                   digiBuf[2] = 13;//
                   break;
               }
-              */
           case ERR_F7:
               {
                   digiBuf[0] = 12;//F
@@ -278,11 +277,28 @@ void write_err_num(uint8 dat) //π ’œ¬Îœ‘ æ
                   digiBuf[2] = 13;//
                   break;
               }
-          case ERR_CC:
+          case ERR_SEQ:
               {
-                  digiBuf[0] = 16;//c
-                  digiBuf[1] = 16; // c
-                  digiBuf[2] = 16;//c
+                  digiBuf[0] = 5;//S
+                  digiBuf[1] = 15; // E
+                  digiBuf[2] = 17;//Q
+                  //digiBuf[0] = 16;//L
+                  //digiBuf[1] = 16; // U
+                  //digiBuf[2] = 16;//E
+                  break;
+              }
+          case ERR_LUE:
+              {
+                  digiBuf[0] = 19;//L
+                  digiBuf[1] = 18; // U
+                  digiBuf[2] = 15;//E
+                  break;
+              }
+          case ERR_SEE:
+              {
+                  digiBuf[0] = 5;//S
+                  digiBuf[1] = 15; // E
+                  digiBuf[2] = 15;//E
                   break;
               }
           default:
