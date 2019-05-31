@@ -4,9 +4,9 @@
 #include "config.h"
 
 #define key_5  0
-#define Key_8  0
+#define Key_8  1
 #define Key_7  0
-#define key_6  1
+#define key_6  0
 
 
 #define   soft_version      13 //Èí¼þ°æ±¾ºÅ  v1.3

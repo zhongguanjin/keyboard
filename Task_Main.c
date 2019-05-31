@@ -574,7 +574,7 @@ void del(uint8 value)
     if(key_arry[top] == value) //是栈顶元素
     {
         key_arry[top] = 0; //清零
-        top -= 1;  //移完后需把栈顶标号减1
+        top = 0;  //移完后需把栈顶标号减1
     }
     else
     {
@@ -612,7 +612,14 @@ void del(uint8 value)
 void key_adjust(uint8 id,uint8 dat)
 {
     key_adjust_fag =1;
-    show_adj_key(id, dat);
+    if(id != WATER_VALVE)
+    {
+        show_adj_key(id, dat);
+    }
+    else
+    {
+        show_adj_key(id, 3);
+    }
 }
 
 /*****************************************************************************
@@ -1959,7 +1966,7 @@ void key_lamp_sync(void)
         time_cnt_del(LAMP_VALVE);
        if(KeyCmd.req.dat[DAT_LIGHT] == 0)
        {
-            ShowPar.lamp_state = OFF;
+            //ShowPar.lamp_state = OFF; //2019-5-20  zgj
             ShowPar.light_state = OFF;
             LED_LAMP_OFF;
             del(LAMP_VALVE);
@@ -1970,7 +1977,7 @@ void key_lamp_sync(void)
                 sync_temp_show();
             }
        }
-       else
+       else //on
        {
            ShowPar.lamp_state = ON;
            LED_LAMP_ON;
