@@ -56,6 +56,8 @@ static UN16 index=0;         //
 //end
 uint8 f6_err_cnt=0;   //zgj 2018-7-26 通信故障
 
+
+uint8 cmd_bak=0;
 //函数申明
 
 void TaskShow(void);
@@ -1530,43 +1532,45 @@ void child_lock_show(void)
 void IDLE_EventHandler(void) // 1s
 {
     static uint8 flg=0;
-    if((Time_t.temp38 == 30)&&(work_state == WORK_STATE_IDLE))  //温度保持30min钟 后切换成38度
-    {
-        if(flg==0)
-        {
-            flg=1;
-            ShowPar.temp_val = 380;
-            KeyCmd.req.dat[DAT_FUN_CMD]= FUN_TEMP;        // 功能码：水龙头出水温度改变
-            KeyCmd.req.dat[DAT_VALVE]=0x00;
-            KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
-            KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
-            KeyCmd.req.dat[25]=(KeyCmd.req.dat[25]|0x01);  //告诉温控板复位
-            //show_tempture(ShowPar.temp_val);//zgj  温度变化
-            dbg("sleep 30min\r\n");
-        }
-        Time_t.temp38 = 0;
-    }
     if(Time_t.sleep++ >=60) // 1min钟时间到
     {
        Time_t.sleep = 0;
-       if(Flg.lcd_sleep_flg == 1) //面板休眠
-       {
-            Time_t.temp38++;
-       }
-       else
-       {
-            dbg("\r\n");
-            Time_t.temp38 = 0;
-            flg=0;
-       }
        if(work_state == WORK_STATE_IDLE)
        {
             if((ShowPar.val&0xff)== OFF)
             {
                 show_sleep(ON);
+                Time_t.temp38++;
             }
        }
        dbg("time38:%d\r\n",Time_t.temp38);
+    }
+    if((work_state == WORK_STATE_IDLE)&&(Flg.lcd_sleep_flg == 1))  //温度保持30min钟 后切换成38度
+    {
+        if(Time_t.temp38 == 30)
+        {
+            if(flg==0)
+            {
+                flg=1;
+                KeyCmd.req.dat[25]=(KeyCmd.req.dat[25]|0x01);  //告诉温控板复位
+            }
+            ShowPar.temp_val = 380;
+            KeyCmd.req.dat[DAT_FUN_CMD]= FUN_TEMP;        // 功能码：水龙头出水温度改变
+            KeyCmd.req.dat[DAT_VALVE]=0x00;
+            KeyCmd.req.dat[DAT_TEMP_H] = (ShowPar.temp_val&0xff00) >> 8;            // 温度高
+            KeyCmd.req.dat[DAT_TEMP_L] = ShowPar.temp_val&0x00ff;                 // 温度低
+            show_tempture(ShowPar.temp_val);//zgj  温度变化
+            dbg("sleep 30min\r\n");
+            Time_t.temp38 = 0;
+        }
+    }
+    else if(Flg.lcd_sleep_flg == 0)
+    {
+        dbg("\r\n");
+        if((ShowPar.val&0xff)!= OFF)
+        {
+            flg=0;
+        }
     }
 }
 
@@ -1734,7 +1738,7 @@ void show_temp_actul(void) // 100ms
             {
                 Time_t.temp_switch++;
             }
-            if((Time_t.temp_switch >= 200)&&(Flg.temp_disreach_flg == 0))// 20s
+            if((Time_t.temp_switch >= 300)&&(Flg.temp_disreach_flg == 0))// 30s
             {
                 if((cnt%24)==0)
                 {
@@ -2259,6 +2263,15 @@ void get_hex_file(void)
             addr.byte[1]=KeyCmd.rsp.dat[5];//get the addr high byte
             addr.byte[0]=KeyCmd.rsp.dat[6];//get the addr low byte
             addr.word>>=1;
+            if(addr.word<APP_START)
+            {
+                index.ush++;
+                KeyCmd.req.dat[DAT_FUN_CMD] =0xE2;
+                KeyCmd.req.dat[DAT_VALVE] =0x02;
+                KeyCmd.req.dat[3]=index.uch[1];
+                KeyCmd.req.dat[4]=index.uch[0];//索引号
+                break;
+            }
             addrbak.word=addr.word-APP_START+APP_BAK; //备份地址
             verify =ok;
             if(chksum == 0)
@@ -2457,6 +2470,7 @@ void Serial_Processing (void)
     KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
     delay_ms(5);
     send_dat(&KeyCmd.req, BUF_SIZE);
+    cmd_bak=KeyCmd.req.dat[DAT_FUN_CMD];
     KeyCmd.req.dat[DAT_FUN_CMD]=0;          //清功能码
     KeyCmd.req.dat[25]=KeyCmd.req.dat[25]&0x06;
     if(bak_ok_flg == 1)//成功备份
