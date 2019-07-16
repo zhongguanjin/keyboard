@@ -74,12 +74,14 @@ void main(void)
 	while(1)
 	{
         console_process();
+        /*
         if(Flg.frame_ok_fag == 1)
         {
-            clear_f6_cnt();
+            //clear_f6_cnt();
             Flg.frame_ok_fag = 0;
             Serial_Processing();
         }
+        */
         TaskProcess();            // 任务处理
 	    CLRWDT();
 	};

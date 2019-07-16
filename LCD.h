@@ -65,7 +65,7 @@ enum
 //°´¼üµÆ
 #define     LED_SFIO_OUT                        ( TRISF = 0 )
 
-#if (key_5||key_6)
+#if(Key_5||Key_6)
 #define     LED_TAP_OFF                         ( LATF5 = 0 )
 #define     LED_TAP_ON                          ( LATF5 = 1 )
 #define     LED_SHOWER_OFF                      ( LATF6 = 0 )
@@ -95,12 +95,12 @@ enum
 #define     LED_DEC_ON                          ( LATF7 = 1 )
 #define     LED_WATER_OFF                       ( LATC5 = 0 )
 #define     LED_WATER_ON                        ( LATC5 = 1 )
-#if Key_8
+#if (Key_8)
 #define     LED_AIR_OFF                         ( LATC4 = 0 )
 #define     LED_AIR_ON                          ( LATC4 = 1 )
 #define     LED_LAMP_OFF                        ( LATC3 = 0 )
 #define     LED_LAMP_ON                         ( LATC3 = 1 )
-#elif Key_7
+#elif (Key_7)
 #define     LED_AIR_OFF                         ( LATC3 = 0 )
 #define     LED_AIR_ON                          ( LATC3 = 1 )
 #define     LED_LAMP_OFF                        ( LATC4 = 0 )

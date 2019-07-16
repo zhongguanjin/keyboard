@@ -3,13 +3,37 @@
 
 #include "config.h"
 
-#define key_5  0
-#define Key_8  1
-#define Key_7  0
-#define key_6  0
+#define Key_5  0
+#define Key_6  0
+#define Key_7  1
+#define Key_8  0
 
+#define panel_5  1
+#define panel_6  2
+#define panel_7  3
+#define panel_8  4
+
+#define   DEV_TYPE    panel_7
+
+#if(DEV_TYPE == panel_8)
+uint8 partnum[12]={2,9,9,0,0,0,0,9,1,1,0,0}; //299000091100
+#endif
+
+#if(DEV_TYPE == panel_7)
+uint8 partnum[12]={2,9,9,0,0,0,0,3,2,1,0,0};
+#endif
+
+#if(DEV_TYPE == panel_6)
+uint8 partnum[12]={2,9,9,0,0,0,0,9,1,1,0,0};
+#endif
+
+#if(DEV_TYPE == panel_5)
+uint8 partnum[12]={2,9,9,0,0,0,0,4,1,1,0,0};
+#endif
 
 #define   soft_version      13 //软件版本号  v1.3
+
+
 
 // 任务结构体：
 typedef struct _TASK_COMPONENTS
@@ -31,7 +55,11 @@ typedef struct _TASK_COMPONENTS
 
 /*按键功能定义*/
 
-#if (key_5||key_6)
+
+
+
+
+#if (Key_5||Key_6)
 #define   ALL_CLOSE          0X00
 #define   TAP_VALVE          0X04
 #define   SHOWER_VALVE       0X08
@@ -48,11 +76,11 @@ typedef struct _TASK_COMPONENTS
 #define   DRAIN_VALVE        0X04
 #define   INC_VALVE          0X08
 #define   DEC_VALVE          0X10
-#if Key_8
+#if (Key_8)
 #define   LAMP_VALVE         0X80
 #define   AIR_VALVE          0X40
 #define   WATER_VALVE        0X20
-#elif Key_7
+#elif (Key_7)
 #define   LAMP_VALVE         0X40
 #define   AIR_VALVE          0X80
 #define   WATER_VALVE        0X20
@@ -101,6 +129,7 @@ typedef struct
     uint8 othet_st_flg:1;
     uint8 exhibition_flg:1;
     uint8 panel_drain_key:1;  //面板排水按键
+    uint8 holte_mode_flg:1; //酒店模式
 }tFlag_t;
 
 tFlag_t   Flg;

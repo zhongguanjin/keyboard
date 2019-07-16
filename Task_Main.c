@@ -439,13 +439,13 @@ void TaskKeyPrs(void)  //10MS
 {
     uint8 id = 0;
     static uint16 count =0;
-#if key_5
+#if Key_5
     id =  Button_id&0X1f;
 #elif Key_7
     id =  Button_id&0X7f; //7f
 #elif Key_8
     id =  Button_id&0Xff; //ff
-#elif key_6
+#elif Key_6
     id =  Button_id&0X3f; //ff
 #endif
     if(work_state !=WORK_MCU_UPDATE)
@@ -1370,7 +1370,7 @@ void LOCK_EventHandler(void) //10ms
 
 void WIFI_EventHandler(void) //10ms
 {
-    if(work_state == WORK_STATE_IDLE)
+    if(work_state == WORK_STATE_IDLE)&&(Flg.holte_mode_flg == OFF))
     {
         work_state =WORK_WIFI_PAIR;
         show_wifi_pair(10,10,10);
@@ -1970,7 +1970,7 @@ void key_lamp_sync(void)
         time_cnt_del(LAMP_VALVE);
        if(KeyCmd.req.dat[DAT_LIGHT] == 0)
        {
-            //ShowPar.lamp_state = OFF; //2019-5-20  zgj
+            ShowPar.lamp_state = OFF; //2019-5-20  zgj
             ShowPar.light_state = OFF;
             LED_LAMP_OFF;
             del(LAMP_VALVE);
@@ -2112,13 +2112,21 @@ void key_state_sync(void)
             sync_temp_show();
             work_state =WORK_STATE_IDLE;
         }
-       if((KeyCmd.req.dat[DAT_LOCK]&0x02) == 0x02)
+       if((KeyCmd.req.dat[DAT_LOCK]&0x02) == 0x02)//展会模式
        {
             Flg.exhibition_flg =1;
        }
        else
        {
             Flg.exhibition_flg =0;
+       }
+       if((KeyCmd.req.dat[DAT_LOCK]&0x08) == 0x08)//酒店模式
+       {
+            Flg.holte_mode_flg=1;
+       }
+       else
+       {
+            Flg.holte_mode_flg =0;
        }
     }
     if(KeyCmd.rsp.dat[DAT_CLAEN]!=KeyCmd.req.dat[DAT_CLAEN]) //清洁状态更新
@@ -2179,6 +2187,7 @@ void key_state_sync(void)
             }
          }
      }
+
 }
 /*****************************************************************************
  函 数 名  : key_temp_sync
@@ -2375,6 +2384,7 @@ void Serial_Processing (void)
     static uint8 UpdateOverTicks = 10;
     memcpy(&KeyCmd.rsp,Recv_Buf,sizeof(KeyCmd.rsp));
     uint8 cmd = KeyCmd.rsp.dat[DAT_FUN_CMD];
+    clear_f6_cnt();
     switch(cmd)
     {
         case 0xD1://升级
@@ -2428,13 +2438,30 @@ void Serial_Processing (void)
             }
             break;
         }
+        case 0xD0://查询版本号
+        {
+            KeyCmd.req.dat[1] =0xE0;
+            KeyCmd.req.dat[2] = partnum[0]+0x30;
+            KeyCmd.req.dat[3] = partnum[1]+0x30;
+            KeyCmd.req.dat[4] = partnum[2]+0x30;
+            KeyCmd.req.dat[5] = partnum[3]+0x30;
+            KeyCmd.req.dat[6] = partnum[4]+0x30;
+            KeyCmd.req.dat[7] = partnum[5]+0x30;
+            KeyCmd.req.dat[8] = partnum[6]+0x30;
+            KeyCmd.req.dat[9] = partnum[7]+0x30;
+            KeyCmd.req.dat[10] = partnum[8]+0x30;
+            KeyCmd.req.dat[11] = partnum[9]+0x30;
+            KeyCmd.req.dat[12] = partnum[10]+0x30;
+            KeyCmd.req.dat[13] = partnum[11]+0x30;
+            break;
+        }
         default:
         {
             if(work_state !=WORK_MCU_UPDATE)
             {
                 if(0 == KeyCmd.req.dat[DAT_FUN_CMD])  //判断功能码 按键板是否在使用
                 {
-               #if key_5
+               #if Key_5
                     key_inflow_sync();
                     key_drain_sync();
                     key_state_sync();
@@ -2461,6 +2488,7 @@ void Serial_Processing (void)
             {
                 if((UpdateOverTicks--)==0)
                 {
+                    UpdateOverTicks=10;
                     work_state = WORK_STATE_IDLE;
                 }
             }
@@ -2468,7 +2496,7 @@ void Serial_Processing (void)
         }
     }
     KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
-    delay_ms(5);
+    //delay_ms(5);
     send_dat(&KeyCmd.req, BUF_SIZE);
     cmd_bak=KeyCmd.req.dat[DAT_FUN_CMD];
     KeyCmd.req.dat[DAT_FUN_CMD]=0;          //清功能码

@@ -156,7 +156,8 @@ void console_process(void)
                         if(ch ==04)
                         {
                             Recv_Buf[index]=ch;
-                            Flg.frame_ok_fag=1;
+                            //Flg.frame_ok_fag=1;
+                            Serial_Processing();
                         }
                         st=RX_START_ST;
                         break;
