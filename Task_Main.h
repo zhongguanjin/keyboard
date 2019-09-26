@@ -3,9 +3,9 @@
 
 #include "config.h"
 
-#define Key_5  0
+#define Key_5  1
 #define Key_6  0
-#define Key_7  1
+#define Key_7  0
 #define Key_8  0
 
 #define panel_5  1
@@ -13,7 +13,7 @@
 #define panel_7  3
 #define panel_8  4
 
-#define   DEV_TYPE    panel_7
+#define   DEV_TYPE    panel_5
 
 #if(DEV_TYPE == panel_8)
 uint8 partnum[12]={2,9,9,0,0,0,0,9,1,1,0,0}; //299000091100
@@ -31,7 +31,7 @@ uint8 partnum[12]={2,9,9,0,0,0,0,9,1,1,0,0};
 uint8 partnum[12]={2,9,9,0,0,0,0,4,1,1,0,0};
 #endif
 
-#define   soft_version      13 //软件版本号  v1.3
+#define   soft_version      14 //软件版本号  v1.4
 
 
 

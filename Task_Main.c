@@ -1370,7 +1370,7 @@ void LOCK_EventHandler(void) //10ms
 
 void WIFI_EventHandler(void) //10ms
 {
-    if(work_state == WORK_STATE_IDLE)&&(Flg.holte_mode_flg == OFF))
+    if((work_state == WORK_STATE_IDLE)&&(Flg.holte_mode_flg == OFF))
     {
         work_state =WORK_WIFI_PAIR;
         show_wifi_pair(10,10,10);
