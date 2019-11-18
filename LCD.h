@@ -134,5 +134,5 @@ extern void     show_wifi_pair(uint8 bai,uint8 shi,uint8 ge);
 extern void     show_awaken();
 extern void     show_update(void);
 extern void show_soft_version(uint16 dat);
-
+extern void show_test(uint16 data);//≤‚ ‘¥Œ ˝
 #endif /* CAPT_APP_H_ */

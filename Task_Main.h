@@ -141,6 +141,7 @@ enum
   WORK_STATE_CLEAN,
   WORK_WIFI_PAIR,
   WORK_MCU_UPDATE,
+  WORK_STATE_TEST,
   WORK_STATE_MAX
 };
 
@@ -185,10 +186,15 @@ enum
     DAT_MAX
 };
 
+
 #define DAT_ERR_NUM     26
 #define DAT_OTHER_ST    25
 #define DAT_WIFI_PAIR   19
 #define DAT_MAS_TIME    18
+
+#define DAT_TEST_H      16
+#define DAT_TEST_L     17
+
 /*
 0x00 -- 空指令 查询
 0x01 -- 进水通道切换(此时流量与温度对应发生变化)

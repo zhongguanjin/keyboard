@@ -98,6 +98,15 @@ void led_scan(void)
     }
 }
 
+void show_test(uint16 data)//测试次数
+{
+    data=data/10;
+    digi_flg = 1;
+    Flg.lcd_sleep_flg = 0;
+    digiBuf[0] = data/100;
+    digiBuf[1] = (data%100)/10;
+    digiBuf[2] = data%10;
+}
 
 
 void show_tempture( uint16 data)//温度显示

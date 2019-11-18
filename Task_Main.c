@@ -60,6 +60,10 @@ uint8 f6_err_cnt=0;   //zgj 2018-7-26 通信故障
 uint8 cmd_bak=0;
 //函数申明
 
+static uint16 test_time =0;
+
+UN16 test_num;
+uint8 test_flg=0;
 void TaskShow(void);
 void TaskKeyScan(void);
 void TaskKeyPrs(void);
@@ -533,6 +537,7 @@ void TaskKeyPrs(void)  //10MS
                 count = 0;
                 Flg.lock_flg =0;
                 time_clean = 0;
+                test_time =0;
                 break;
             }
         }
@@ -776,6 +781,19 @@ void TAP_EventHandler(void)
             show_tempture(ShowPar.temp_val);
         }
      }
+	if(work_state == WORK_STATE_TEST)
+	{
+        if((LastKey&TAP_VALVE)&&((test_time++)>=500))// 5s
+        {
+            KeyPressDown = 0;
+            nv_write(0,3,0);
+            nv_write(0,4,0);
+            test_num.ush =0;
+            test_flg=1;
+            show_test(test_num.ush);
+            test_time = 0;
+		}
+	}
 }
 /*****************************************************************************
  函 数 名  : SHOWER_EventHandler
@@ -883,7 +901,30 @@ void DRAIN_EventHandler(void)
             time_cnt_del(DRAIN_VALVE);
             show_state(ShowPar.drain_state);
         }
+        if((LastKey&DRAIN_VALVE)&&((test_time++)>=500))// 5s
+        {
+            KeyPressDown = 0;
+    		work_state =WORK_STATE_TEST;
+    		KeyCmd.req.dat[DAT_FUN_CMD] = 0x12; //功能码
+    		KeyCmd.req.dat[DAT_VALVE] =0x01;
+            test_time = 0;
+            show_test(test_num.ush);
+        }
+
     }
+	if(work_state == WORK_STATE_TEST)
+	{
+        if((LastKey&DRAIN_VALVE)&&((test_time++)>=500))// 5s
+        {
+            KeyPressDown = 0;
+    		work_state =WORK_STATE_IDLE;
+    		KeyCmd.req.dat[DAT_FUN_CMD] = 0x12; //功能码
+    		KeyCmd.req.dat[DAT_VALVE] =0x00;
+            test_time = 0;
+    		show_tempture(ShowPar.temp_val);
+		}
+	}
+
 }
 /*****************************************************************************
  函 数 名  : INC_EventHandler
@@ -1861,7 +1902,10 @@ void sync_temp_show(void)
     if((key_adjust_fag==0)&&(ShowPar.on_off_flg==0)
         &&(incdec_fag == 0)&&(Flg.err_flg!=1))           //显示处于空闲时
     {
-        show_tempture(ShowPar.temp_val);
+        if(work_state != WORK_STATE_TEST)
+        {
+            show_tempture(ShowPar.temp_val);
+        }
     }
 }
 
@@ -2128,6 +2172,15 @@ void key_state_sync(void)
        {
             Flg.holte_mode_flg =0;
        }
+       if((KeyCmd.req.dat[DAT_LOCK]&0x10) == 0x10)//
+       {
+            work_state = WORK_STATE_TEST;
+            show_test(test_num.ush);
+       }
+       else
+       {
+            work_state = WORK_STATE_IDLE;
+       }
     }
     if(KeyCmd.rsp.dat[DAT_CLAEN]!=KeyCmd.req.dat[DAT_CLAEN]) //清洁状态更新
     {
@@ -2185,9 +2238,33 @@ void key_state_sync(void)
             {
                 sync_temp_show();
             }
-         }
-     }
-
+        }
+    }
+    if(work_state == WORK_STATE_TEST)
+    {
+        UN16 bak_test;
+        static uint8 time=0;
+        bak_test.uch[0] = KeyCmd.rsp.dat[DAT_TEST_L];
+        bak_test.uch[1] = KeyCmd.rsp.dat[DAT_TEST_H];
+        if(test_flg)
+        {
+            if((time++)>3)
+            {
+                test_flg=0;
+                time=0;
+            }
+        }
+        else
+        {
+            if((bak_test.ush !=0)&&(bak_test.ush!=test_num.ush))
+            {
+                test_num.ush = bak_test.ush;
+                nv_write(0,3,bak_test.uch[0]);
+                nv_write(0,4,bak_test.uch[1]);
+                show_test(test_num.ush);
+            }
+        }
+    }
 }
 /*****************************************************************************
  函 数 名  : key_temp_sync
@@ -2495,6 +2572,9 @@ void Serial_Processing (void)
             break;
         }
     }
+
+    KeyCmd.req.dat[DAT_TEST_L] = test_num.uch[0];
+    KeyCmd.req.dat[DAT_TEST_H] = test_num.uch[1];
     KeyCmd.req.crc_num = CRC8_SUM(&KeyCmd.req.dat[DAT_ADDR], crc_len);
     //delay_ms(5);
     send_dat(&KeyCmd.req, BUF_SIZE);
@@ -2623,6 +2703,8 @@ void BSP_init(void)
     KeyCmd.req.end_num1 = 0x0F;
     KeyCmd.req.end_num2 = 0x04;
     show_soft_version(soft_version);
+    test_num.uch[0]=nv_read(0,3);
+    test_num.uch[1]=nv_read(0,4);
     delay_ms(2000);
     show_tempture( ShowPar.temp_val);
     dbg("temp init\r\n");
