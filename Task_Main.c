@@ -193,6 +193,7 @@ void TaskShow(void) //100ms
     {
         case WORK_STATE_IDLE:
         {
+            ShowPar.temp_val =KeyCmd.req.dat[DAT_TEM_OUT]*10;
             show_work();
             show_temp_flash();
             if((key_adjust_fag==0)&&(ShowPar.on_off_flg==0)
@@ -468,39 +469,39 @@ void TaskKeyPrs(void)  //10MS
             }
             case DRAIN_VALVE:
             {
-                DRAIN_EventHandler();
+                //DRAIN_EventHandler();
                 break;
             }
             case INC_VALVE:
             {
-                INC_EventHandler();
+                //INC_EventHandler();
                 break;
             }
             case DEC_VALVE:
             {
-                DEC_EventHandler();
+                //DEC_EventHandler();
                 break;
             }
             case WATER_VALVE:
             {
-                WATER_EventHandler();
+                //WATER_EventHandler();
                 break;
             }
             case AIR_VALVE:
             {
-                AIR_EventHandler();
+                //AIR_EventHandler();
                 break;
             }
             case LAMP_VALVE:
             {
-                LAMP_EventHandler();
+                //LAMP_EventHandler();
                 break;
             }
     		case CLEAN_VALVE:
     		{
                 //if((KeyCmd.req.dat[DAT_LIQUID]&0x01) == 0x01) //低液位
     		    {
-    			    CLEAN_EventHandler();
+    			    //CLEAN_EventHandler();
     			}
                 break;
     		}
@@ -509,7 +510,7 @@ void TaskKeyPrs(void)  //10MS
                 if((count++)>=300)
                 {
                     count = 0;
-                    LOCK_EventHandler();
+                    //LOCK_EventHandler();
                 }
                break;
             }
@@ -518,7 +519,7 @@ void TaskKeyPrs(void)  //10MS
                 if((count++)>=300)
                 {
                     count = 0;
-                    WIFI_EventHandler();
+                    //WIFI_EventHandler();
                 }
                break;
             }
@@ -527,7 +528,7 @@ void TaskKeyPrs(void)  //10MS
                 if((count++)>=300)
                 {
                     count = 0;
-                    NETWORK_EventHandler();
+                    //NETWORK_EventHandler();
                 }
                break;
             }
@@ -759,6 +760,7 @@ void TAP_EventHandler(void)
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;  // 功能码：进水开关改变
             KeyCmd.req.dat[DAT_VALVE] =  ShowPar.val&0x03; //数据码 龙头状态
+            KeyCmd.req.dat[DAT_FLOW] = 50*ShowPar.tap_state;
             time_cnt_del(TAP_VALVE);
             show_state(ShowPar.tap_state);
         }
@@ -835,6 +837,7 @@ void SHOWER_EventHandler(void)
             }
             KeyCmd.req.dat[DAT_FUN_CMD]= FUN_INFLOW;            // 功能码：进水开关改变
             KeyCmd.req.dat[DAT_VALVE] =  ShowPar.val&0x03; //数据码 花洒
+            KeyCmd.req.dat[DAT_FLOW] = 50*ShowPar.shower_state;
             time_cnt_del(SHOWER_VALVE);
             show_state(ShowPar.shower_state);
         }
