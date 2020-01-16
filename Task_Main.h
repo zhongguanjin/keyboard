@@ -31,7 +31,7 @@ uint8 partnum[12]={2,9,9,0,0,0,0,9,1,1,0,0};
 uint8 partnum[12]={2,9,9,0,0,0,0,4,1,1,0,0};
 #endif
 
-#define   soft_version      14 //软件版本号  v1.4
+#define   soft_version      91 //软件版本号  v1.4
 
 
 
