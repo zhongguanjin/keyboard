@@ -68,10 +68,13 @@ enum
 #if(Key_5||Key_6)
 #define     LED_TAP_OFF                         ( LATF5 = 0 )
 #define     LED_TAP_ON                          ( LATF5 = 1 )
-#define     LED_SHOWER_OFF                      ( LATF6 = 0 )
-#define     LED_SHOWER_ON                       ( LATF6 = 1 )
-#define     LED_DRAIN_OFF                       ( LATF7 = 0 )
-#define     LED_DRAIN_ON                        ( LATF7 = 1 )
+
+//key_4面板花洒改成排水2020.03.20
+#define     LED_SHOWER_OFF                      ( LATF7 = 0 )
+#define     LED_SHOWER_ON                       ( LATF7 = 1 )
+#define     LED_DRAIN_OFF                       ( LATF6 = 0 )
+#define     LED_DRAIN_ON                        ( LATF6 = 1 )
+
 #define     LED_INC_OFF                         ( LATF3 = 0 )
 #define     LED_INC_ON                          ( LATF3 = 1 )
 #define     LED_DEC_OFF                         ( LATF4 = 0 )
@@ -95,17 +98,17 @@ enum
 #define     LED_DEC_ON                          ( LATF7 = 1 )
 #define     LED_WATER_OFF                       ( LATC5 = 0 )
 #define     LED_WATER_ON                        ( LATC5 = 1 )
-#if (Key_8)
-#define     LED_AIR_OFF                         ( LATC4 = 0 )
-#define     LED_AIR_ON                          ( LATC4 = 1 )
-#define     LED_LAMP_OFF                        ( LATC3 = 0 )
-#define     LED_LAMP_ON                         ( LATC3 = 1 )
-#elif (Key_7)
-#define     LED_AIR_OFF                         ( LATC3 = 0 )
-#define     LED_AIR_ON                          ( LATC3 = 1 )
-#define     LED_LAMP_OFF                        ( LATC4 = 0 )
-#define     LED_LAMP_ON                         ( LATC4 = 1 )
-#endif
+    #if (Key_8)
+    #define     LED_AIR_OFF                         ( LATC4 = 0 )
+    #define     LED_AIR_ON                          ( LATC4 = 1 )
+    #define     LED_LAMP_OFF                        ( LATC3 = 0 )
+    #define     LED_LAMP_ON                         ( LATC3 = 1 )
+    #elif (Key_7)
+    #define     LED_AIR_OFF                         ( LATC3 = 0 )
+    #define     LED_AIR_ON                          ( LATC3 = 1 )
+    #define     LED_LAMP_OFF                        ( LATC4 = 0 )
+    #define     LED_LAMP_ON                         ( LATC4 = 1 )
+    #endif
 #endif
 
 

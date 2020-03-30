@@ -3,6 +3,7 @@
 
 #include "config.h"
 
+
 #define Key_5  1
 #define Key_6  0
 #define Key_7  0
@@ -12,8 +13,9 @@
 #define panel_6  2
 #define panel_7  3
 #define panel_8  4
+#define panel_4  5
 
-#define   DEV_TYPE    panel_5
+#define   DEV_TYPE    panel_4
 
 #if(DEV_TYPE == panel_8)
 uint8 partnum[12]={2,9,9,0,0,0,0,9,1,1,0,0}; //299000091100
@@ -31,8 +33,16 @@ uint8 partnum[12]={2,9,9,0,0,0,0,9,1,1,0,0};
 uint8 partnum[12]={2,9,9,0,0,0,0,4,1,1,0,0};
 #endif
 
+#if(DEV_TYPE == panel_4)
+uint8 partnum[12]={2,9,9,0,0,0,1,2,1,1,0,0};
+#endif
+
+
+
 #define   soft_version      14 //软件版本号  v1.4
 
+#define DEV_TYPE      0x00  //浴缸类
+#define BottomWashFun  0   //底部冲洗功能
 
 
 // 任务结构体：
@@ -62,8 +72,10 @@ typedef struct _TASK_COMPONENTS
 #if (Key_5||Key_6)
 #define   ALL_CLOSE          0X00
 #define   TAP_VALVE          0X04
-#define   SHOWER_VALVE       0X08
-#define   DRAIN_VALVE        0X10
+
+#define   SHOWER_VALVE       0X10   //4//key_4面板花洒改成排水2020.03.20
+#define   DRAIN_VALVE        0X08
+
 #define   INC_VALVE          0X01
 #define   DEC_VALVE          0X02
 #define   LAMP_VALVE         0X80
@@ -88,13 +100,15 @@ typedef struct _TASK_COMPONENTS
 #endif
 
 
+//key4组合键中花洒都改为'+'2020. 03. 20
 
-#define   LOCK_VALVE        (TAP_VALVE|SHOWER_VALVE|DEC_VALVE)
+#define   LOCK_VALVE        (TAP_VALVE|INC_VALVE|DEC_VALVE)
+
 #define   CLEAN_VALVE       (INC_VALVE|WATER_VALVE)
 /*WIFI PAIR*/
 #define   WIFI_VALVE        (TAP_VALVE|DRAIN_VALVE)
 // WIFI NET CONFIG
-#define   NETWORK_VAL       (SHOWER_VALVE|DRAIN_VALVE)
+#define   NETWORK_VAL       (INC_VALVE|DRAIN_VALVE)
 
 
 

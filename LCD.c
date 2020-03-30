@@ -363,7 +363,7 @@ void LED_INIT(void)
     LED_COM3_L;
     LED_SEIO_OUT_L;
     LED_TAP_ON;
-    LED_SHOWER_ON;
+    //LED_SHOWER_ON;
     LED_DRAIN_ON;
     LED_INC_ON;
     LED_DEC_ON;
@@ -376,7 +376,7 @@ void LED_INIT(void)
     LED_COM3_H;
     LED_SEIO_OUT_H;
     LED_TAP_OFF;
-    LED_SHOWER_OFF;
+    //LED_SHOWER_OFF;
     LED_DRAIN_OFF;
     LED_INC_OFF;
     LED_DEC_OFF;

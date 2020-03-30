@@ -440,7 +440,7 @@ void TaskKeyPrs(void)  //10MS
     uint8 id = 0;
     static uint16 count =0;
 #if Key_5
-    id =  Button_id&0X1f;
+    id =  Button_id&0X0f;
 #elif Key_7
     id =  Button_id&0X7f; //7f
 #elif Key_8
@@ -2483,6 +2483,8 @@ void Serial_Processing (void)
                 KeyCmd.req.dat[DAT_TEM_PRE] = KeyCmd.rsp.dat[DAT_TEM_PRE];     //浴缸水温
                 KeyCmd.req.dat[DAT_MAS_TIME] = KeyCmd.rsp.dat[DAT_MAS_TIME];     //按摩时间
                 KeyCmd.req.dat[DAT_OTHER_ST] = KeyCmd.rsp.dat[DAT_OTHER_ST];     //其他状态
+                KeyCmd.req.dat[DAT_OTHER_ST]|=(DEV_TYPE<<4);                                //设备类型
+                KeyCmd.req.dat[DAT_LOCK]|=(BottomWashFun<<5);                               //底部冲洗功能标志
             }
             else
             {
