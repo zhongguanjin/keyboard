@@ -1680,6 +1680,8 @@ void show_work(void)//100ms
         {
              KeyCmd.req.dat[DAT_FUN_CMD]= 0x00;
              Flg.net_config_flg=0;
+             net_time=0;
+             show_wifi_pair(2,5,5);
              /*
              write_err_num(ERR_LUE);
              if((delay_stime++) >= 30)
@@ -2160,7 +2162,8 @@ void key_state_sync(void)
             {
                Time_t.wifi_pair =0;
                dbg("WIFI_PAIR over\r\n");
-               sync_temp_show();
+               //sync_temp_show();
+               show_tempture(ShowPar.temp_val);
                work_state = WORK_STATE_IDLE;
             }
         }
@@ -2483,7 +2486,7 @@ void Serial_Processing (void)
                 KeyCmd.req.dat[DAT_TEM_PRE] = KeyCmd.rsp.dat[DAT_TEM_PRE];     //浴缸水温
                 KeyCmd.req.dat[DAT_MAS_TIME] = KeyCmd.rsp.dat[DAT_MAS_TIME];     //按摩时间
                 KeyCmd.req.dat[DAT_OTHER_ST] = KeyCmd.rsp.dat[DAT_OTHER_ST];     //其他状态
-                KeyCmd.req.dat[DAT_OTHER_ST]|=(DEV_TYPE<<4);                                //设备类型
+                KeyCmd.req.dat[DAT_OTHER_ST]|=(DEV_INFO<<4);                                //设备类型
                 KeyCmd.req.dat[DAT_LOCK]|=(BottomWashFun<<5);                               //底部冲洗功能标志
             }
             else

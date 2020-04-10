@@ -41,7 +41,7 @@ uint8 partnum[12]={2,9,9,0,0,0,1,2,1,1,0,0};
 
 #define   soft_version      14 //软件版本号  v1.4
 
-#define DEV_TYPE      0x00  //浴缸类
+#define DEV_INFO      0x00  //浴缸类
 #define BottomWashFun  0   //底部冲洗功能
 
 
