@@ -301,13 +301,6 @@ void write_err_num(uint8 dat) //π ’œ¬Îœ‘ æ
                   digiBuf[2] = 15;//E
                   break;
               }
-          case ERR_DEL:
-              {
-                  digiBuf[0] = 0;//S
-                  digiBuf[1] = 15; // E
-                  digiBuf[2] = 19;//E
-                  break;
-              }
           default:
               {
                 if((dat&ERR_F1) == ERR_F1)

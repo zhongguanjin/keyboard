@@ -1384,7 +1384,7 @@ void NETWORK_EventHandler(void)
 {
     if(work_state == WORK_STATE_IDLE)
     {
-        write_err_num(ERR_DEL);                        //盈趣电子显示DEL
+        write_err_num(ERR_SEQ);
         Flg.net_config_flg =1;
         KeyCmd.req.dat[DAT_FUN_CMD]= 0xff;            // 功能码：wifi net config
         KeyCmd.req.dat[DAT_VALVE] = 0x01;

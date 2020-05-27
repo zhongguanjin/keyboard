@@ -21,7 +21,6 @@ enum
 #define     ERR_SEQ    0xCC
 #define     ERR_LUE   0x11
 #define     ERR_SEE   0x12
-#define     ERR_DEL   0x13
 
 
 
