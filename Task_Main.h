@@ -28,7 +28,7 @@ uint8 partnum[12]={2,9,9,0,0,0,0,9,1,1,0,0};
 #endif
 
 #if(DEV_TYPE == panel_5)
-uint8 partnum[12]={2,9,9,0,0,0,0,4,1,1,0,0};
+uint8 partnum[12]={2,9,9,0,0,0,1,5,1,1,0,0};
 #endif
 
 #define   soft_version      90 //90-Ó¯È¤µç×Ó°æ±¾
